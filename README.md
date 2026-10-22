@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="imagens/art.webp" alt="Ateliê Gleici Costuras: vestido vermelho no manequim com agulha e linha dourada" width="600">
+</p>
+
 # Atelie de Moldes Gleici Costuras
 
 Editor de modelagem de roupas que roda direto no navegador, sem instalar nada. Serve para desenhar moldes, transformar desenhos em peças, adicionar margem de costura, bainha, piques e pences, fazer a gradação de tamanhos e imprimir o molde em tamanho real, dividido em folhas A4 para colar e montar.

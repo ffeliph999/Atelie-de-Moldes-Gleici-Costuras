@@ -528,7 +528,7 @@ let tapeCur=null, tapeChains=[], tapeHover=null; // ruler chains drawn with the 
 const pointers=new Map(); let pinch=null;
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
-const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genRot:'livre',genRef:false,genSel:true,genDel:false,
+const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
   seamA:1,seamB:'',seamCf:'reto',hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
   alignDir:'h',par:1,menor:true,tbBase:false,tbPin:false,tapeBase:false,tapePin:false,gcX:true,gcY:true};
 try{Object.assign(opt,JSON.parse(localStorage.getItem(OPTKEY)||'{}'))}catch(e){}
@@ -725,15 +725,15 @@ function seamPoly(sh,ptsOverride){
   for(let k=0;k<n;k++){const a=Q[k],b=Q[(k+1)%n],seg=b.seg;const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;N.push({x:sg*dy/l,y:-sg*dx/l});
     let d=0; if(!(fe&&seg===fe.i)){const sp=P[seg]||{}; const e0=sp.e!=null?+sp.e:(+sh.seam||0); const e1=(sp.e2!=null&&sp.e2!=='')?+sp.e2:e0;
       const ta=(a.seg===seg)?a.t:0, tm=(ta+b.t)/2; d=e0+(e1-e0)*tm;}
-    if(d>0)any=true; D.push(d);}
+    if(d!==0)any=true; D.push(d);} // negative d = allowance inside the piece
   if(!any) return null;
   const out=[];
   for(let k=0;k<n;k++){const p=Q[k],k0=(k-1+n)%n,n1=N[k0],n2=N[k],d1=D[k0],d2=D[k];
     const segIn=Q[k].seg, segOut=Q[(k+1)%n].seg; const cf=(P[segIn]&&P[segIn].cf==='chanfro')||(P[segOut]&&P[segOut].cf==='chanfro');
     const det=n1.x*n2.y-n1.y*n2.x;
     if(p.corner&&cf&&Math.abs(det)>.05){out.push({x:p.x+n1.x*d1,y:p.y+n1.y*d1,seg:segOut},{x:p.x+n2.x*d2,y:p.y+n2.y*d2,seg:segOut});continue}
-    let vx,vy; if(Math.abs(det)<1e-3){const d=Math.max(d1,d2);vx=n2.x*d;vy=n2.y*d}else{vx=(d1*n2.y-n1.y*d2)/det;vy=(n1.x*d2-d1*n2.x)/det}
-    const m=Math.hypot(vx,vy),lim=3*Math.max(d1,d2,.01); if(m>lim){vx*=lim/m;vy*=lim/m}
+    let vx,vy; if(Math.abs(det)<1e-3){const d=Math.abs(d1)>Math.abs(d2)?d1:d2;vx=n2.x*d;vy=n2.y*d}else{vx=(d1*n2.y-n1.y*d2)/det;vy=(n1.x*d2-d1*n2.x)/det}
+    const m=Math.hypot(vx,vy),lim=3*Math.max(Math.abs(d1),Math.abs(d2),.01); if(m>lim){vx*=lim/m;vy*=lim/m}
     out.push({x:p.x+vx,y:p.y+vy,seg:segOut});}
   return out; // out[j].seg = segment whose allowance runs from out[j] to out[j+1]
 }
@@ -867,8 +867,9 @@ function shapesSVG(px,exp){
         h+=hemLines(sh,px,C);
       }
       const cls=sh.piece?'piece':('cons'+(sh.closed?' closed':''));
-      if(exp) h+=`<path class="${C(sh.piece?'piece':'cons')}" d="${d}" stroke-width="${px*(sh.piece?1.4:1)}"${sh.piece?'':` stroke-dasharray="${4*px} ${3*px}"`}/>`;
-      else h+=`<g data-id="${sh.id}" class="${on?'sel':''}"><path class="hit" d="${d}" stroke-width="${12*px*T()}"/><path class="${cls}" d="${d}" stroke-width="${(on?2.2:sh.piece?1.4:1)*px}"/></g>`;
+      const dots=sh.piece&&sh.dotted?` stroke-dasharray="${2*px} ${3*px}" stroke-linecap="round"`:'';
+      if(exp) h+=`<path class="${C(sh.piece?'piece':'cons')}" d="${d}" stroke-width="${px*(sh.piece?1.4:1)}"${sh.piece?dots:` stroke-dasharray="${4*px} ${3*px}"`}/>`;
+      else h+=`<g data-id="${sh.id}" class="${on?'sel':''}"><path class="hit" d="${d}" stroke-width="${12*px*T()}"/><path class="${cls}" d="${d}" stroke-width="${(on?2.2:sh.piece?1.4:1)*px}"${dots}/></g>`;
       if(sh.piece&&sh.closed) h+=decor(sh,px,C);
     } else if(sh.type==='notch'){ h+=notchSVG(sh,px,exp,on);
     } else if(sh.type==='mark'){ h+=markSVG(sh,px,exp,on);
@@ -906,7 +907,8 @@ function pieceLines(sh,o={}){
   const L=[],q=+sh.qtd||1;
   if(o.nome!==false){ if(sh.showRef!==false&&doc.meta.nome) L.push({t:doc.meta.nome,k:.55}); L.push({t:sh.name||'Molde',k:1,b:1}); }
   if(o.textos===false) return L;
-  if(sh.showQtd!==false) L.push({t:(sh.par?`${q} par${q>1?'es':''}`:`Cortar ${q}x`)+(sh.fold?' na dobra':'')+(sh.tubular?' (tubular)':''),k:.72});
+  if(sh.showQtd!==false&&sh.cutText) L.push({t:sh.cutText,k:.72});
+  else if(sh.showQtd!==false) L.push({t:(sh.par?`${q} par${q>1?'es':''}`:`Cortar ${q}x`)+(sh.fold?' na dobra':'')+(sh.tubular?' (tubular)':''),k:.72});
   if(hasGrade(sh)) L.push({t:o.base?baseSize().name:doc.sizes.map(s=>s.name).join(' · '),k:.6});
   if(sh.tecido&&sh.tecido!=='Tecido 1') L.push({t:sh.tecido,k:.6});
   if(sh.rot&&sh.rot!=='livre') L.push({t:'Rotação: '+sh.rot,k:.6});
@@ -970,6 +972,12 @@ function renderOverlay(vw,vh){
   if(measure&&measure.a&&measure.b){const a=measure.a,b=measure.b,d=dist(a,b);
     h+=`<path class="hl" d="M${a.x} ${a.y}L${b.x} ${b.y}" stroke-width="${2*px}"/><circle class="h" cx="${a.x}" cy="${a.y}" r="${3*px}" stroke-width="${px}"/><circle class="h" cx="${b.x}" cy="${b.y}" r="${3*px}" stroke-width="${px}"/>`;
     h+=olabel((a.x+b.x)/2,(a.y+b.y)/2-6*px,`${fmt(d,2)} cm`,px)}
+  if(tool==='seam'&&pick.seamPrev){const pv=pick.seamPrev,sh=byId(pv.id);
+    if(sh&&sh.pts[pv.i]){const a=+opt.seamA||0,b=opt.seamB===''||opt.seamB==null?a:+opt.seamB,P=sh.pts.map(p=>({...p}));P[pv.i].e=pv.side*a;P[pv.i].e2=pv.side*b;
+      h+=`<path class="hl" d="${segD(sh,pv.i)}" stroke-width="${3*px}" opacity=".55" style="fill:none"/>`;
+      const S=seamPoly(sh,P); if(S){let d='';const n=S.length;for(let j=0;j<n;j++)if(S[j].seg===pv.i){const q=S[(j+1)%n];d+=`M${S[j].x} ${S[j].y}L${q.x} ${q.y}`}
+        h+=`<path class="hl" d="${d}" stroke-width="${2.2*px}" stroke-dasharray="${6*px} ${4*px}" style="fill:none"/>`}
+      const m=bez(segCtrl(sh.pts,pv.i,true),.5);h+=olabel(m.x,m.y-10*px,`${fmt(a,2)}${b!==a?' → '+fmt(b,2):''} cm · ${pv.side<0?'para dentro':'para fora'}`,px)}}
   if(tool==='tape'){
     const ruler=(a,b,live)=>{const d=dist(a,b);if(d<1e-6)return '';const ux=(b.x-a.x)/d,uy=(b.y-a.y)/d,nx=-uy*5*px,ny=ux*5*px;
       return `<path class="hl" d="M${a.x} ${a.y}L${b.x} ${b.y}M${a.x-nx} ${a.y-ny}L${a.x+nx} ${a.y+ny}M${b.x-nx} ${b.y-ny}L${b.x+nx} ${b.y+ny}" stroke-width="${1.6*px}"${live?` stroke-dasharray="${5*px} ${3*px}"`:''}/>`+
@@ -1052,6 +1060,7 @@ function toolPanel(t){
       rowI('Tam. do texto:',oSel('genText',sizeOpts))+
       rowI('Sentido do fio:',oSel('genGrain',[[90,'↕ vertical'],[0,'↔ horizontal'],[45,'⤡ 45°'],[135,'⤢ 135°']]))+
       rowI('Rotação Permitida:',oSel('genRot',[['livre','Livre'],['180°','180°'],['90°','90°'],['nenhuma','Nenhuma']]))+
+      rowI('Quantidade:',oNum('genQtd',1,1))+oChk('genPar','Par (cortar em pares)')+oChk('genFold','Cortar na dobra')+
       btn('genApply','Gerar molde','block',!pick.region)+
       oChk('genRef','Moldes como referência')+oChk('genSel','Selecionar forma')+oChk('genDel','Excluir linhas de construção')+
       hint(pick.region?'Contorno fechado. Ajuste as opções e clique em <b>Gerar molde</b>.':
@@ -1065,7 +1074,9 @@ function toolPanel(t){
       hint('Passe o mouse sobre uma linha ou margem para ver a medida. Cada clique cria uma régua emendada na anterior; duplo clique ou <b>Enter</b> termina e <b>Esc</b> apaga as réguas. <b>Adicionar valor</b> soma a última sequência na tabela. <b>Shift+clique</b> numa linha soma o comprimento dela em cada tamanho.')); }
   case 'seam': return sec('Margem de costura',rowI('Inicial:',oNum('seamA',.05,0),'cm')+rowI('Final:',`<input type="number" id="o-seamB" data-opt="seamB" value="${opt.seamB}" step="0.05" min="0" placeholder="igual">`,'cm')+
       rowI('Acabamento:',oSel('seamCf',[['reto','Reto'],['chanfro','Chanfrado']]))+
-      hint('Clique numa linha do molde para aplicar só nela. Clique dentro do molde para aplicar em todas as linhas. Com <b>Final</b> preenchido, a margem varia ao longo da linha.'));
+      (()=>{const sp=pick.seamPiece&&byId(pick.seamPiece);return `<div class="acts" style="display:grid">${btn('seamAll','Aplicar costura em todo o painel','primary',!sp)}${btn('seamRemove','Remover somente a costura','primary',!sp)}${btn('seamDotted',sp&&sp.dotted?'Remover pontilhado do painel':'Aplicar pontilhado ao painel','primary',!sp)}</div>`+
+        hint(sp?`Painel: <b>${esc(sp.name||'Molde')}</b>.`:'Os botões acima agem no painel escolhido: clique numa linha ou dentro de um molde.')})()+
+      hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>dentro</b> do molde a margem vai para dentro; <b>fora</b>, vai para fora. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.'));
   case 'hem': return sec('Bainha',rowI('Largura:',oNum('hemW',.1,0),'cm')+rowI('Dobras:',oNum('hemN',1,1))+oChk('hemPq','Piques nas dobras')+hint('Clique na linha da barra. A margem dessa linha vira largura × dobras.'));
   case 'notch': return sec('Piques',rowI('Ícone Contorno:',oSel('nIcon',[['traco','Traço'],['v','V'],['t','T']]))+rowI('Altura:',oNum('nH',1,1),'mm')+
       rowI('Ícone Interno:',oSel('mIcon',[['cruz','Cruz'],['circulo','Círculo'],['ponto','Ponto']]))+rowI('Tamanho:',oNum('mSize',1,1),'mm')+
@@ -1185,11 +1196,12 @@ function panelPath(s){
      `<dl class="stats"><dt>Perímetro</dt><dd data-stat="len"></dd><dt>Área</dt><dd data-stat="area"></dd></dl>`)+
    sec('Propriedades',
     `${rowI('Nome do painel:',`<input id="p-name" data-k="name" value="${esc(s.name)}">`)}
+     ${rowI('Quantidade:',`<input type="number" id="p-qtd" data-k="qtd" value="${s.qtd||1}" min="1" step="1">`,s.par?'pares':'vezes')}
+     ${rowI('Texto de corte:',`<input id="p-cut" data-k="cutText" value="${esc(s.cutText||'')}" placeholder="automático: Cortar ${s.qtd||1}x">`)}
      ${rowI('Tam. do texto:',`<select id="p-ls" data-k="labelSize">${sizeOpts.map(([v,l])=>`<option value="${v}"${+s.labelSize===v?' selected':''}>${l}</option>`).join('')}</select>`)}
      ${rowI('Sentido do fio:',`<select id="p-grain" data-k="grainA">${[[90,'↕ vertical'],[0,'↔ horizontal'],[45,'⤡ 45°'],[135,'⤢ 135°']].concat([90,0,45,135].includes(+(s.grainA??90))?[]:[[s.grainA,fmt(s.grainA,0)+'°']]).map(([v,l])=>`<option value="${v}"${+(s.grainA??90)===+v?' selected':''}>${l}</option>`).join('')}</select>`)}
      ${rowI('Rotação permitida:',`<select id="p-rot" data-k="rot">${[['livre','Livre'],['180°','180°'],['90°','90°'],['nenhuma','Nenhuma']].map(([v,l])=>`<option value="${v}"${s.rot===v?' selected':''}>${l}</option>`).join('')}</select>`)}
      ${ck('showRef','Nome / Referência',true)}${ck('mirror','Permitir espelhar',true)}${ck('fold','Cortar na dobra',false)}${ck('tubular','Dobra no tecido tubular',false)}${ck('par','Par',false)}${ck('showQtd','Exibir quantidade',true)}
-     ${rowI('Quantidade:',`<input type="number" id="p-qtd" data-k="qtd" value="${s.qtd||1}" min="1" step="1">`)}
      ${rowI('Tecido:',`<select id="p-tecido" data-k="tecido">${['Tecido 1','Tecido 2','Tecido 3','Forro','Entretela'].map(t=>`<option${(s.tecido||'Tecido 1')===t?' selected':''}>${t}</option>`).join('')}</select>`)}
      ${rowI('Margem geral:',`<input type="number" id="p-seam" data-k="seam" value="${s.seam||0}" min="0" step="0.1">`,'cm')}`)+
    sec('Encolhimento',`<p class="hint">Aumenta o molde na impressão e na exportação para compensar o encolhimento do tecido.</p>`+
@@ -1318,12 +1330,16 @@ function clickNotch(w){
   if(pc){const p=snap(w);mutate(()=>doc.shapes.push({id:uid(),type:'mark',x:p.x,y:p.y,parent:pc.id,icon:opt.mIcon,size:+opt.mSize||10}));return}
   toast('Clique no contorno ou dentro de um molde');
 }
+// seam tool: the side (inside/outside the piece) follows the cursor
+function seamHover(w){const s=nearestSeg(w,14,x=>x.closed&&x.piece);return s?{id:s.sh.id,i:s.i,side:inPoly(w,sample(s.sh))?-1:1}:null}
 function clickSeam(w){
-  const s=nearestSeg(w,10,x=>x.closed&&x.piece); const a=+opt.seamA||0, b=opt.seamB===''||opt.seamB==null?null:+opt.seamB;
-  if(s){mutate(()=>{const p=s.sh.pts[s.i];p.e=a;if(b!=null&&b!==a)p.e2=b;else delete p.e2;p.cf=opt.seamCf;delete p.hem});toast(`Margem de ${fmt(a,2)}${b!=null&&b!==a?' → '+fmt(b,2):''} cm na linha`);return}
+  const h=seamHover(w), a=+opt.seamA||0, b=opt.seamB===''||opt.seamB==null?null:+opt.seamB;
+  if(h){const sh=byId(h.id);mutate(()=>{const p=sh.pts[h.i];p.e=h.side*a;if(b!=null&&b!==a)p.e2=h.side*b;else delete p.e2;p.cf=opt.seamCf;delete p.hem});
+    pick.seamPiece=h.id;pick.seamSide=h.side;renderPanel();
+    toast(`Margem de ${fmt(a,2)}${b!=null&&b!==a?' → '+fmt(b,2):''} cm ${h.side<0?'para dentro':'para fora'}`);return}
   const pc=pieceAt(w,x=>x.closed&&x.piece);
-  if(pc){mutate(()=>{pc.seam=a;pc.pts.forEach(p=>{if(!p.hem){delete p.e;delete p.e2}p.cf=opt.seamCf})});toast(`Margem de ${fmt(a,2)} cm em todo o molde`);return}
-  toast('Clique numa linha ou dentro de um molde');
+  if(pc){pick.seamPiece=pc.id;renderPanel();return}
+  toast('Clique numa linha de um molde');
 }
 function clickHem(w){
   const s=nearestSeg(w,10,x=>x.closed&&x.piece); if(!s) return toast('Clique na linha da barra de um molde');
@@ -1623,8 +1639,8 @@ const ACT={
   autoTrace(){autoTrace()}, digLock(){const im=byId(pick.digit);mutate(()=>{im.locked=!im.locked})}, digRemove(){const id=pick.digit;mutate(()=>{doc.shapes=doc.shapes.filter(s=>s.id!==id)});pick={};renderPanel()},
   perimApply(){const p=pick.perim,sh=p&&byId(p.id);if(!sh)return;if(sh.locked)return toast('Molde travado');let ok=false;mutate(()=>{ok=redefine(sh,p.i,+opt.perimLen,opt.perimMode)});if(ok){pick.perim=null;renderPanel();toast('Comprimento redefinido')}},
   genApply(){const r=pick.region;if(!r)return;const srcId=pick.regionSrc;const id=uid();
-    mutate(()=>{const piece={id,type:'path',piece:true,closed:true,pts:r.map(p=>({x:r3(p.x),y:r3(p.y),s:!!p.s})),name:opt.genName||'Molde '+(doc.shapes.filter(s=>s.piece).length+1),labelSize:+opt.genText,grainA:+opt.genGrain,rot:opt.genRot,qtd:1,fold:false,seam:0};
-      if(srcId&&!opt.genRef){const src=byId(srcId);Object.assign(src,{piece:true,name:piece.name,labelSize:piece.labelSize,grainA:piece.grainA,rot:piece.rot,qtd:1,fold:false,seam:0});piece.id=src.id}
+    mutate(()=>{const piece={id,type:'path',piece:true,closed:true,pts:r.map(p=>({x:r3(p.x),y:r3(p.y),s:!!p.s})),name:opt.genName||'Molde '+(doc.shapes.filter(s=>s.piece).length+1),labelSize:+opt.genText,grainA:+opt.genGrain,rot:opt.genRot,qtd:Math.max(1,Math.round(+opt.genQtd||1)),par:!!opt.genPar,fold:!!opt.genFold,seam:0};
+      if(srcId&&!opt.genRef){const src=byId(srcId);Object.assign(src,{piece:true,name:piece.name,labelSize:piece.labelSize,grainA:piece.grainA,rot:piece.rot,qtd:piece.qtd,par:piece.par,fold:piece.fold,seam:0});piece.id=src.id}
       else doc.shapes.push(piece);
       if(opt.genDel){const pb=boxOf(piece.pts);doc.shapes=doc.shapes.filter(s=>!(s.type==='path'&&!s.piece&&!s.parent&&(()=>{const b=shapeBox(s);return b.x<pb.x+pb.w+.5&&b.x+b.w>pb.x-.5&&b.y<pb.y+pb.h+.5&&b.y+b.h>pb.y-.5})()))}
       pick.newId=piece.id;});
@@ -1635,6 +1651,10 @@ const ACT={
   alignApply(){const L=pick.align||[];if(L.length<2)return;const ref=byId(L[0].id).pts[L[0].i];
     mutate(()=>L.slice(1).forEach(a=>{const sh=byId(a.id);if(sh.locked)return;const p=sh.pts[a.i];if(opt.alignDir==='h')p.y=ref.y;else p.x=ref.x}));pick.align=[];renderPanel();toast('Pontos alinhados')},
   checkApply(){const B=byId(pick.cb.id);if(B.locked)return toast('A peça B está travada');mutate(()=>walk(pick.ca,pick.cb,opt.menor));const a=pick.ca,b=pick.cb;pick.cb={...b,len:segLen(byId(b.id).pts,b.i,true)};renderPanel()},
+  seamAll(){const sh=byId(pick.seamPiece);if(!sh)return;const side=pick.seamSide||1,a=+opt.seamA||0;
+    mutate(()=>{sh.seam=side*a;sh.pts.forEach(p=>{if(!p.hem){delete p.e;delete p.e2}p.cf=opt.seamCf})});toast(`Margem de ${fmt(a,2)} cm ${side<0?'para dentro':'para fora'} em todo o painel`)},
+  seamRemove(){const sh=byId(pick.seamPiece);if(!sh)return;mutate(()=>{sh.seam=0;sh.pts.forEach(p=>{if(!p.hem){delete p.e;delete p.e2;delete p.cf}})});toast('Margem de costura removida (bainhas mantidas)')},
+  seamDotted(){const sh=byId(pick.seamPiece);if(!sh)return;mutate(()=>{sh.dotted=!sh.dotted})},
   pieceVis(b){const s=byId(b.dataset.id);mutate(()=>{s.hidden=!s.hidden;if(s.hidden)sel.delete(s.id)})},
   pieceLock(b){const s=byId(b.dataset.id);mutate(()=>{s.locked=!s.locked})},
   pieceDup(b){sel=new Set([b.dataset.id]);ACT.dup()},
@@ -1735,6 +1755,7 @@ function onMove(e){
   if(tool==='line'&&e.shiftKey){const a=drag&&drag.kind==='line'?drag.a:(temp&&temp.kind==='line1'?temp.pts[0]:null);if(a)cursorS=constrain(a,w)}
   $('#stPos').textContent=`x ${fmt((cursorS||w).x)}  y ${fmt((cursorS||w).y)} cm`;
   if(tool==='tape'&&!drag) tapeHover=tapeHoverAt(w);
+  if(tool==='seam'&&!drag) pick.seamPrev=seamHover(w);
   if(tool==='notch'&&!drag){const s=nearestSeg(w,12,x=>x.closed&&x.piece);pick.nprev=s?s.q:null}
   if(!drag){if(temp||guidesOn||tool!=='select')render();return}
   switch(drag.kind){
@@ -1949,7 +1970,7 @@ function drawPDF(pdf,ox,oy){
       if(PR.margem){const S=seamPoly(s);if(S){pdf.setDrawColor(192,57,43);pdf.setLineWidth(.015);pdf.setLineDashPattern([.25,.15],0);poly(S,true);ink()}
         const n=s.pts.length,sg=orientSign(s); s.pts.forEach((p,i)=>{if(!p.hem||(+p.hem.n||1)<2)return;const q=s.pts[(i+1)%n],dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,nx=sg*dy/l,ny=-sg*dx/l;
           pdf.setDrawColor(192,57,43);pdf.setLineWidth(.012);pdf.setLineDashPattern([.4,.1,.1,.1],0);for(let k=1;k<+p.hem.n;k++)line({x:p.x+nx*p.hem.w*k,y:p.y+ny*p.hem.w*k},{x:q.x+nx*p.hem.w*k,y:q.y+ny*p.hem.w*k});ink()})}
-      pdf.setLineWidth(.028); poly(sample(s),true);
+      pdf.setLineWidth(.028); if(s.dotted)pdf.setLineDashPattern([.06,.12],0); poly(sample(s),true); pdf.setLineDashPattern([],0);
       // grain line
       const b=boxOf(s.pts),cx=b.x+b.w/2,cy=b.y+b.h/2,a=(s.grainA??90)*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a);
       const L=Math.max(4,.55*(Math.abs(uy)*b.h+Math.abs(ux)*b.w)),ah=Math.min(1,L*.12),p1={x:cx-ux*L/2,y:cy-uy*L/2},p2={x:cx+ux*L/2,y:cy+uy*L/2};
