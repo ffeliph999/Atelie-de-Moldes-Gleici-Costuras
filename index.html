@@ -317,7 +317,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 .app.mobile .rail .tb svg{width:24px;height:24px}
 .app.mobile .rail .tb.on{box-shadow:inset 0 -3px 0 var(--accent)}
 .app.mobile .rail hr{width:1px;height:30px;border:0;border-left:1px solid var(--line);margin:8px 3px;flex:none}
-.app.mobile .panel{position:absolute;left:0;right:0;top:auto;bottom:0;width:auto;max-height:58%;z-index:35;transform:translateY(105%);border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:var(--shadow);transition:transform .22s ease;padding-bottom:env(safe-area-inset-bottom,0px)}
+.app.mobile .panel{position:absolute;left:0;right:0;top:auto;bottom:calc(59px + env(safe-area-inset-bottom,0px));width:auto;max-height:58%;z-index:35;transform:translateY(105%);border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:var(--shadow);transition:transform .22s ease;padding-bottom:env(safe-area-inset-bottom,0px)}
 .app.mobile.panel-open .panel{transform:none}
 .app.mobile .grab{display:block;width:100%;border:0;background:transparent;padding:8px 0 2px}
 .app.mobile .grab::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line);margin:0 auto}
@@ -2149,6 +2149,9 @@ $('#helpBtn').addEventListener('click',()=>openModal('helpModal'));
 try{const th=localStorage.getItem('atelie-theme');if(th)document.documentElement.dataset.theme=th}catch(e){}
 buildChrome(); load();
 $('#top').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)act(b.dataset.act,b)});
+// phone: "Opções" chip on the canvas and the sheet's grab handle open/close the options panel
+$('#tcBtn').addEventListener('click',()=>act('panelToggle'));
+document.querySelector('.panel .grab').addEventListener('click',()=>act('panelToggle'));
 $('#rail').addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(a){act(a.dataset.act,a);return}const b=e.target.closest('[data-tool]');if(!b)return;const t=b.dataset.tool;setTool(tool===t&&t!=='select'?'select':t)});
 $('#docTitle').value=doc.meta.nome;
 $('#docTitle').addEventListener('input',e=>{doc.meta.nome=e.target.value;const f=$('#m-nome');if(f)f.value=e.target.value;scheduleSave()});
