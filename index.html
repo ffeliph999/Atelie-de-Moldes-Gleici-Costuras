@@ -92,7 +92,7 @@ button{cursor:pointer}
 .txt.sel{fill:var(--accent)}
 .ptm{stroke:var(--ink);fill:none}.ptc{fill:var(--ink)}
 .sel .ptm{stroke:var(--accent)}.sel .ptc{fill:var(--accent)}
-.ghost{fill:none;pointer-events:none}
+svg .ghost{fill:none;pointer-events:none}
 .glbl{font-family:var(--font-num);pointer-events:none}
 image.locked{pointer-events:none}
 #gOver *{pointer-events:none}
@@ -329,7 +329,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 .app.mobile .toolchip{display:flex;position:absolute;left:8px;top:8px;z-index:5;align-items:center;gap:6px;background:var(--chrome);border:1px solid var(--line);border-radius:999px;padding:4px 4px 4px 12px;box-shadow:0 2px 10px rgba(0,0,0,.12);font-weight:600;font-size:13px;max-width:calc(100% - 16px)}
 .app.mobile .toolchip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app.mobile .toolchip button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:7px 12px;font-weight:600;font-size:12.5px;flex:none}
-.app.mobile .toolchip button.ghost{background:var(--chrome-2);color:var(--ink)}
+.app.mobile .toolchip button.tc-open{background:var(--chrome-2);color:var(--ink)}
 .app.mobile input,.app.mobile select,.app.mobile textarea,.back.mob input,.back.mob select{font-size:16px!important}
 .app.mobile .sec{padding:12px 16px}
 .app.mobile .btn{padding:10px 14px}
@@ -1089,7 +1089,7 @@ function renderPanel(){
 }
 function updateChip(){const n=$('#tcName');if(!n)return;const ss=selShapes();
   n.textContent=tool==='select'?(ss.length===1?(ss[0].name||{path:ss[0].closed?'Forma':'Linha',text:'Texto',image:'Imagem',notch:'Pique',mark:'Marcação',point:'Ponto'}[ss[0].type]||'Seleção'):ss.length?`${ss.length} elementos`:'Selecionar'):(TNAME[tool]||'');
-  const b=$('#tcBtn'),open=app.classList.contains('panel-open');b.textContent=open?'Fechar':'Opções';b.classList.toggle('ghost',open)}
+  const b=$('#tcBtn'),open=app.classList.contains('panel-open');b.textContent=open?'Fechar':'Opções';b.classList.toggle('tc-open',open)}
 /* phone / computer layout */
 function isPhone(){return innerWidth<700||(matchMedia('(pointer: coarse)').matches&&Math.min(innerWidth,innerHeight)<600)}
 function applyUI(){
@@ -1754,6 +1754,8 @@ document.addEventListener('pointerdown',e=>{const p=$('#pop');if(!p.hidden&&!p.c
 /* ---------- pointer ---------- */
 function onDown(e){
   hidePop();
+  // phone: with the options sheet open, a tap on the drawing only closes the sheet
+  if(mobile&&e.pointerType!=='aim'&&app.classList.contains('panel-open')&&pointers.size===0){act('panelToggle');e.preventDefault&&e.preventDefault();return}
   if(e.button===1||e.button===2||spaceDown){drag={kind:'pan',cx:e.clientX,cy:e.clientY,vx:view.x,vy:view.y};svg.classList.add('panning');e.preventDefault();return}
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{svg.setPointerCapture(e.pointerId)}catch(_){}
   if(e.pointerType==='touch'&&pointers.size===2){if(drag&&drag.s0&&drag.moved)doc.shapes=JSON.parse(drag.s0);drag=null;$('#loupe').hidden=true;const [a,b]=[...pointers.values()];pinch={d:dist(a,b)||1,s:view.scale,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,vx:view.x,vy:view.y};return}
