@@ -96,6 +96,12 @@ button{cursor:pointer}
 image.locked{pointer-events:none}
 #gOver *{pointer-events:none}
 #gOver .h{pointer-events:all;cursor:move}
+.rzb{fill:none;stroke:var(--hl);stroke-linecap:round;stroke-linejoin:round}
+#gOver .rzh{fill:transparent;pointer-events:all}
+#gOver [data-rz="nw"],#gOver [data-rz="se"]{cursor:nwse-resize}
+#gOver [data-rz="ne"],#gOver [data-rz="sw"]{cursor:nesw-resize}
+#gOver [data-rz="n"],#gOver [data-rz="s"]{cursor:ns-resize}
+#gOver [data-rz="e"],#gOver [data-rz="w"]{cursor:ew-resize}
 .h{fill:var(--chrome);stroke:var(--accent)}
 .h.on{fill:var(--accent)}
 .h.pick{fill:var(--hl);stroke:var(--hl)}
@@ -437,7 +443,17 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
       <section class="pcol">
         <h4>Tamanho</h4>
         <p class="hint">Configure o tamanho do papel:</p>
-        <select id="prPaper" class="psel"><option value="a4">A4</option><option value="a3">A3</option><option value="letter">Carta</option></select>
+        <select id="prPaper" class="psel">
+          <optgroup label="Série A"><option value="a4">A4 (21 × 29,7 cm)</option><option value="a3">A3 (29,7 × 42 cm)</option><option value="a2">A2 (42 × 59,4 cm)</option><option value="a1">A1 (59,4 × 84,1 cm)</option><option value="a0">A0 (84,1 × 118,9 cm)</option><option value="a5">A5 (14,8 × 21 cm)</option></optgroup>
+          <optgroup label="Outros papéis"><option value="letter">Carta (21,6 × 27,9 cm)</option><option value="legal">Ofício (21,6 × 35,6 cm)</option><option value="tabloid">Tabloide (27,9 × 43,2 cm)</option></optgroup>
+          <optgroup label="Especiais"><option value="plot">Plotter (rolo)</option><option value="custom">Customizar</option><option value="total">Dimensões totais</option></optgroup>
+        </select>
+        <div class="row" id="prRollRow" hidden><span>Largura do rolo</span><span class="u"><input type="number" id="prRoll" min="20" max="500" step="0.1"><em>cm</em></span></div>
+        <div id="prCustomRow" hidden style="display:grid;gap:8px">
+          <div class="row"><span>Largura</span><span class="u"><input type="number" id="prCW" min="5" max="500" step="0.1"><em>cm</em></span></div>
+          <div class="row"><span>Altura</span><span class="u"><input type="number" id="prCH" min="5" max="500" step="0.1"><em>cm</em></span></div>
+        </div>
+        <p class="hint" id="prPaperHint"></p>
       </section>
       <section class="pcol">
         <h4>Margens</h4>
@@ -526,6 +542,7 @@ let gradeView='list', newGrade={name:'',color:SWATCH[0]}, gradePoint=null;
 let tape={vals:{},count:0};
 let tapeCur=null, tapeChains=[], tapeHover=null; // ruler chains drawn with the tape tool
 const pointers=new Map(); let pinch=null;
+let resizeMode=false; // top-bar "Redimensionar" toggles drag handles around the selection
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
 const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
@@ -942,6 +959,12 @@ function renderOverlay(vw,vh){
   if(measuresOn) for(const sh of doc.shapes) if(sh.type==='path'&&!(ss.length===1&&ss[0]===sh)) h+=segLabels(sh,px);
   if(ss.length){ const one=ss.length===1&&ss[0].type==='path'; if(!one){const u=selBox();if(u)h+=`<rect class="selbox" x="${u.x-4*px}" y="${u.y-4*px}" width="${u.w+8*px}" height="${u.h+8*px}" stroke-width="${px}" stroke-dasharray="${4*px} ${3*px}"/>`}
     if(one&&tool==='select'){const sh=ss[0]; h+=segLabels(sh,px); if(!hidePts&&!sh.locked) h+=handles(sh,px,i=>selPoint&&selPoint.id===sh.id&&selPoint.i===i?'on':'');} }
+  if(resizeMode&&tool==='select'&&ss.length&&!ss.every(s=>s.locked)){const u=selBox();if(u){
+    const g=9*px*T(),L=16*px*T(),x0=u.x-g,y0=u.y-g,x1=u.x+u.w+g,y1=u.y+u.h+g,xm=(x0+x1)/2,ym=(y0+y1)/2;
+    const br=(x,y,dx,dy)=>`M${x+dx*L} ${y}H${x}V${y+dy*L}`;
+    h+=`<path class="rzb" d="${br(x0,y0,1,1)+br(x1,y0,-1,1)+br(x1,y1,-1,-1)+br(x0,y1,1,-1)}M${xm-L/2} ${y0}h${L}M${xm-L/2} ${y1}h${L}M${x0} ${ym-L/2}v${L}M${x1} ${ym-L/2}v${L}" stroke-width="${3*px}"/>`;
+    const hs=11*px*T();for(const [k,x,y] of [['nw',x0,y0],['n',xm,y0],['ne',x1,y0],['e',x1,ym],['se',x1,y1],['s',xm,y1],['sw',x0,y1],['w',x0,ym]])h+=`<rect class="rzh" data-rz="${k}" x="${x-hs}" y="${y-hs}" width="${2*hs}" height="${2*hs}"/>`;
+    if(drag&&drag.kind==='resize')h+=olabel(xm,y0-12*px,`${fmt(u.w)} × ${fmt(u.h)} cm`,px)}}
   // tool-specific vertex handles
   if(['align','grade','gradeCopy'].includes(tool)&&!hidePts){
     for(const sh of doc.shapes) if(sh.type==='path') h+=handles(sh,px,i=>{
@@ -1263,7 +1286,8 @@ function updateButtons(){
   const has=sel.size>0;
   const set=(id,dis,on)=>{const b=$('#tb-'+id);if(!b)return;if(dis!=null)b.disabled=dis;if(on!=null)b.classList.toggle('on',on)};
   set('undo',!undoS.length);set('redo',!redoS.length);
-  ['resize','rotate','flipV','flipH','lock','del'].forEach(k=>set(k,!has));
+  ['rotate','flipV','flipH','lock','del'].forEach(k=>set(k,!has));
+  set('resize',false,resizeMode);
   set('smooth',!(has||selPoint));
   set('snap',null,snapOn);set('guides',null,guidesOn);set('measures',null,measuresOn);set('hidePts',null,hidePts);
   set('lock',null,has&&selShapes().every(s=>s.locked));
@@ -1602,7 +1626,8 @@ const ACT={
   smooth(){ if(selPoint){const sh=byId(selPoint.id);mutate(()=>{sh.pts[selPoint.i].s=!sh.pts[selPoint.i].s});return}
     const ps=selShapes().filter(s=>s.type==='path'&&!s.locked); if(!ps.length) return toast('Selecione uma linha ou molde');
     mutate(()=>ps.forEach(sh=>{let P=sh.pts.map(p=>({...p}));if(P.length>6){const ring=sh.closed?P.concat([P[0]]):P;let R=rdp(ring,.12);if(sh.closed)R=R.slice(0,-1);if(R.length>=(sh.closed?3:2))P=R}sh.pts=markCorners(P,sh.closed,38)}));toast('Curvas suavizadas')},
-  resize(b){if(!sel.size)return;const bx=selBox();showPop(b,`<b>Redimensionar</b>${rowI('Largura:',`<input type="number" id="rzW" step="0.1" value="${r3(bx.w)}">`,'cm')}${rowI('Altura:',`<input type="number" id="rzH" step="0.1" value="${r3(bx.h)}">`,'cm')}<label class="chk"><input type="checkbox" id="rzK" checked> Manter proporção</label>${btn('rzGo','Aplicar','primary block')}`,
+  resize(){resizeMode=!resizeMode;if(resizeMode){if(tool!=='select')setTool('select');toast(sel.size?'Arraste as alças laranjas para redimensionar (Shift mantém a proporção)':'Selecione um molde ou forma para redimensionar')}render();updateButtons()},
+  resizeNum(b){if(!sel.size)return;const bx=selBox();showPop(b,`<b>Redimensionar</b>${rowI('Largura:',`<input type="number" id="rzW" step="0.1" value="${r3(bx.w)}">`,'cm')}${rowI('Altura:',`<input type="number" id="rzH" step="0.1" value="${r3(bx.h)}">`,'cm')}<label class="chk"><input type="checkbox" id="rzK" checked> Manter proporção</label>${btn('rzGo','Aplicar','primary block')}`,
     p=>{const W=p.querySelector('#rzW'),H=p.querySelector('#rzH'),K=p.querySelector('#rzK');W.addEventListener('input',()=>{if(K.checked)H.value=r3(bx.h*(+W.value/bx.w))});H.addEventListener('input',()=>{if(K.checked)W.value=r3(bx.w*(+H.value/bx.h))});
       p.querySelector('[data-act="rzGo"]').addEventListener('click',()=>{const sx=bx.w?+W.value/bx.w:1,sy=bx.h?+H.value/bx.h:1;if(sx>0&&sy>0){scaleSel(sx,sy);hidePop()}})})},
   rotate(b){if(!sel.size)return;showPop(b,`<b>Rotacionar</b>${rowI('Ângulo:',`<input type="number" id="rtA" step="1" value="90">`,'°')}<div class="acts">${btn('r-90','−90°')}${btn('r90','+90°')}${btn('r180','180°')}</div>${btn('rtGo','Aplicar','primary block')}`,
@@ -1615,7 +1640,7 @@ const ACT={
     mutate(()=>{const ids=new Set(sel);doc.shapes=doc.shapes.filter(s=>!ids.has(s.id)&&!isChildOf(s,ids));sel.clear();selPoint=null})},
   theme(){document.documentElement.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('atelie-theme',document.documentElement.dataset.theme)}catch(e){}updateButtons()},
   panelToggle(){app.classList.toggle('panel-open');updateChip()},
-  more(){const needSel=['resize','rotate','flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,measures:measuresOn,hidePts};
+  more(){const needSel=['rotate','flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,measures:measuresOn,hidePts,resize:resizeMode};
     $('#moreGrid').innerHTML=MORE.map(([a,l,i])=>`<button data-m="${a}"${(needSel.includes(a)&&!sel.size)||(a==='smooth'&&!sel.size&&!selPoint)?' disabled':''} class="${on[a]?'on':''}">${ic(i)}<span>${l}</span></button>`).join('');
     $('#moreGrid').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{$('#moreSheet').hidden=true;act(b.dataset.m,$('#moreBtn'))});
     $('#moreSheet').hidden=false},
@@ -1691,6 +1716,8 @@ function onDown(e){
   if(e.pointerType==='touch'&&pointers.size===2){if(drag&&drag.s0&&drag.moved)doc.shapes=JSON.parse(drag.s0);drag=null;const [a,b]=[...pointers.values()];pinch={d:dist(a,b)||1,s:view.scale,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,vx:view.x,vy:view.y};return}
   const w=toWorld(e); cursorW=w; const p=snap(w,{temp:true}); cursorS=p;
   const hEl=e.target.closest&&e.target.closest('[data-h]'), sEl=e.target.closest&&e.target.closest('[data-id]');
+  const rz=tool==='select'&&e.target.closest&&e.target.closest('[data-rz]');
+  if(rz){drag={kind:'resize',dir:rz.dataset.rz,box:selBox(),ids:new Set([...sel].filter(i=>!byId(i).locked)),s0:snap0(),moved:false};render();return}
   switch(tool){
     case 'select': downSelect(e,w,hEl,sEl); break;
     case 'rect': case 'ellipse': drag={kind:'box',a:p,b:p}; break;
@@ -1765,6 +1792,12 @@ function onMove(e){
       translate(drag.ids,{x:d.x-drag.last.x,y:d.y-drag.last.y});if(d.x||d.y)drag.moved=true;drag.last=d;break}
     case 'box': drag.b=cursorS||w; break;
     case 'line': drag.b=cursorS||w; break;
+    case 'resize': {const b=drag.box,dr=drag.dir,p=snapOn?snap(w,{exclude:drag.ids}):w;let x0=b.x,y0=b.y,x1=b.x+b.w,y1=b.y+b.h;
+      if(dr.includes('e'))x1=Math.max(x0+.2,p.x);if(dr.includes('w'))x0=Math.min(x1-.2,p.x);if(dr.includes('s'))y1=Math.max(y0+.2,p.y);if(dr.includes('n'))y0=Math.min(y1-.2,p.y);
+      let sx=b.w?(x1-x0)/b.w:1,sy=b.h?(y1-y0)/b.h:1;
+      if(dr.length===2&&e.shiftKey){const s=Math.abs(sx-1)>Math.abs(sy-1)?sx:sy;sx=sy=s}
+      const ax=dr.includes('w')?b.x+b.w:b.x,ay=dr.includes('n')?b.y+b.h:b.y;
+      doc.shapes=JSON.parse(drag.s0);xform(drag.ids,q=>({x:ax+(q.x-ax)*sx,y:ay+(q.y-ay)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})});drag.moved=true;break}
     case 'pencil': {const l=drag.pts[drag.pts.length-1];if(dist(l,w)*view.scale>2)drag.pts.push(w);break}
     case 'measure': drag.b=cursorS||w; measure.b=drag.b; break;
     case 'marquee': drag.b=w; break;
@@ -1778,7 +1811,7 @@ function onUp(e){
   svg.classList.remove('panning'); if(!drag) return; const d=drag; drag=null;
   switch(d.kind){
     case 'point': if(d.moved){mergeDropped(d.id,d.i);pushUndo(d.s0);changed()}else render(); break;
-    case 'move': case 'extend': if(d.moved){pushUndo(d.s0);changed(d.kind!=='move')}else render(); break;
+    case 'move': case 'extend': case 'resize': if(d.moved){pushUndo(d.s0);changed(d.kind!=='move')}else render(); break;
     case 'box': addBox(d.a,d.b); break;
     case 'line': if(dist(d.a,d.b)*view.scale<4) temp={kind:'line1',pts:[d.a]}; else {temp={pts:[d.a]};addLine(d.b)} break;
     case 'pencil': addPencil(d.pts); break;
@@ -1904,8 +1937,9 @@ $('#expDl').addEventListener('click',()=>download(safeName()+'.'+expFmt,$('#expT
 $('#expCopy').addEventListener('click',()=>{const t=$('#expText');navigator.clipboard.writeText(t.value).then(()=>toast('Copiado')).catch(()=>{t.focus();t.select();toast('Texto selecionado: use Ctrl+C')})});
 
 /* print: tiled PDF in real scale, pages numbered column-row */
-const PAPER={a4:[21,29.7,'A4'],a3:[29.7,42,'A3'],letter:[21.59,27.94,'Carta']};
-const PR={nome:true,textos:true,margem:true,brancas:false,tracejadas:false,base:false,paper:'a4',custom:false,m:{t:.5,r:.5,b:.5,l:.5},orient:'p'};
+const PAPER={a4:[21,29.7,'A4'],a3:[29.7,42,'A3'],a2:[42,59.4,'A2'],a1:[59.4,84.1,'A1'],a0:[84.1,118.9,'A0'],a5:[14.8,21,'A5'],
+  letter:[21.59,27.94,'Carta'],legal:[21.59,35.56,'Ofício'],tabloid:[27.94,43.18,'Tabloide']};
+const PR={nome:true,textos:true,margem:true,brancas:false,tracejadas:false,base:false,paper:'a4',custom:false,m:{t:.5,r:.5,b:.5,l:.5},orient:'p',roll:91.4,cw:50,ch:70};
 try{Object.assign(PR,JSON.parse(localStorage.getItem('atelie-print')||'{}'))}catch(e){}
 const PRPROPS=[['nome','Nome do molde','<path d="M7 4l-3 4v12h16V8l-3-4"/><path d="M9 4c0 2 1.3 3 3 3s3-1 3-3"/>'],['textos','Textos do molde','<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 14h7M9 17h5"/>'],
   ['margem','Margem de costura','<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 8h8v8H8z" stroke-dasharray="2 1.6"/>'],['brancas','Páginas em branco','<path d="M6 3h9l4 4v14H6z"/>'],
@@ -1913,15 +1947,23 @@ const PRPROPS=[['nome','Nome do molde','<path d="M7 4l-3 4v12h16V8l-3-4"/><path 
 const PRTIPS={margem:'Imprime a linha tracejada da margem de costura em volta de cada molde.',tracejadas:'Imprime a borda de cada folha tracejada, para guiar o corte e a colagem.',base:'Imprime só o tamanho base, sem os tamanhos da gradação.'};
 function savePR(){try{localStorage.setItem('atelie-print',JSON.stringify(PR))}catch(e){}}
 function prMargins(){return PR.custom?PR.m:{t:.5,r:.5,b:.5,l:.5}}
+// page size for the chosen paper; plotter = roll width × content height, total = one page around everything
+function pageSize(b,m){
+  if(PR.paper==='total') return {W:b.w+m.l+m.r,H:b.h+m.t+m.b,name:'no tamanho total'};
+  if(PR.paper==='plot') return {W:+PR.roll||91.4,H:b.h+m.t+m.b,name:'rolo de '+fmt(+PR.roll||91.4)+' cm'};
+  let W,H,name; if(PR.paper==='custom'){W=+PR.cw||50;H=+PR.ch||70;name=`${fmt(W)} × ${fmt(H)} cm`}else{[W,H,name]=PAPER[PR.paper]||PAPER.a4}
+  if(PR.orient==='l'?W<H:W>H)[W,H]=[H,W]; return {W,H,name};
+}
 function printPlan(){
   const b=contentBox(); if(!b) return null;
-  let [W,H]=PAPER[PR.paper]; if(PR.orient==='l')[W,H]=[H,W];
-  const m=prMargins(), tw=W-m.l-m.r, th=H-m.t-m.b; if(tw<2||th<2) return {bad:true};
+  const m=prMargins(), ps=pageSize(b,m), W=ps.W, H=ps.H;
+  const tw=W-m.l-m.r, th=H-m.t-m.b; if(tw<2||th<2) return {bad:true};
+  if(Math.max(W,H)>500) return {bad:true,big:true};
   const cols=Math.ceil(b.w/tw-1e-9), rows=Math.ceil(b.h/th-1e-9);
   const boxes=printBoxes(); const tiles=[];
   for(let c=0;c<cols;c++)for(let r=0;r<rows;r++){const tx=b.x+c*tw,ty=b.y+r*th;
     const used=boxes.some(q=>q.x<tx+tw&&q.x+q.w>tx&&q.y<ty+th&&q.y+q.h>ty); tiles.push({c,r,tx,ty,used})}
-  return {b,W,H,m,tw,th,cols,rows,tiles};
+  return {b,W,H,m,tw,th,cols,rows,tiles,name:ps.name};
 }
 function printBoxes(){return doc.shapes.filter(s=>s.type!=='image'&&!(s.type==='path'&&!s.piece&&!s.parent)&&s.type!=='point').map(s=>{
   if(s.type==='path'&&s.piece&&s.closed){const bs=[boxOf(seamPoly(s)||sample(s))];if(!PR.base)for(const z of doc.sizes)if(!z.base&&hasGrade(s))bs.push(boxOf(sample({...s,pts:gradedPts(s,z)})));return unionBox(bs)}return shapeBox(s)})}
@@ -1929,7 +1971,7 @@ function openPrint(){renderPrintUI();openModal('printModal')}
 function renderPrintUI(){
   $('#prProps').innerHTML=PRPROPS.map(([k,l,ico])=>`<label class="tg" title="${PRTIPS[k]||''}"><svg viewBox="0 0 24 24" aria-hidden="true">${ico}</svg><span>${l}${PRTIPS[k]?' <b title="'+PRTIPS[k]+'" style="color:var(--muted);font-size:11px">(?)</b>':''}</span><input type="checkbox" class="switch" id="pr-${k}" data-pr="${k}"${PR[k]?' checked':''}></label>`).join('');
   $('#prProps').querySelectorAll('[data-pr]').forEach(i=>i.addEventListener('change',()=>{PR[i.dataset.pr]=i.checked;savePR();updPrint()}));
-  $('#prPaper').value=PR.paper; $('#prCustom').checked=PR.custom;
+  $('#prPaper').value=PR.paper; $('#prCustom').checked=PR.custom; $('#prRoll').value=PR.roll; $('#prCW').value=PR.cw; $('#prCH').value=PR.ch;
   document.querySelectorAll('input[name="prOr"]').forEach(r=>r.checked=r.value===PR.orient);
   document.querySelectorAll('.mctl').forEach(el=>{const s=el.dataset.side;
     el.innerHTML=`<span class="mv"><input type="number" id="pm-${s}" min="0" max="8" step="0.25" value="${PR.m[s].toFixed(2)}" aria-label="Margem"><em>cm</em></span><span class="pm"><button type="button" data-d="-0.25" aria-label="Diminuir">−</button><button type="button" data-d="0.25" aria-label="Aumentar">+</button></span>`;
@@ -1940,17 +1982,22 @@ function renderPrintUI(){
 }
 function updPrint(){
   $('#prMargins').hidden=!PR.custom;
-  let [W,H]=PAPER[PR.paper]; if(PR.orient==='l')[W,H]=[H,W]; const k=110/Math.max(W,H), m=prMargins();
+  const sp=PR.paper==='plot'||PR.paper==='total';
+  $('#prRollRow').hidden=PR.paper!=='plot'; $('#prCustomRow').hidden=PR.paper!=='custom';
+  document.querySelector('.orient').style.display=sp?'none':'';
+  $('#prPaperHint').textContent=PR.paper==='plot'?'Cada coluna do rolo vira uma página da largura do rolo, com a altura dos moldes.':PR.paper==='total'?'Uma página só, do tamanho de todos os moldes (mais as margens). Ideal para gráficas e plotters.':'';
+  const m=prMargins(), bx=withOutput(contentBox)||{w:21,h:29.7}, ps=pageSize(bx,m), W=ps.W, H=ps.H, k=110/Math.max(W,H);
   const sh=$('#prSheet'); sh.style.width=W*k+'px'; sh.style.height=H*k+'px';
   Object.assign($('#prPrint').style,{left:m.l*k+'px',top:m.t*k+'px',right:m.r*k+'px',bottom:m.b*k+'px'});
   const p=withOutput(printPlan), info=$('#prInfo'), go=$('#prGo');
   if(!p){info.textContent='Não há moldes para imprimir.';go.disabled=true;return}
-  if(p.bad){info.textContent='As margens são grandes demais para esse papel.';go.disabled=true;return}
+  if(p.bad){info.textContent=p.big?'Página maior que 5 m: o PDF não suporta. Use Plotter, um papel menor ou divida os moldes.':'As margens são grandes demais para esse papel.';go.disabled=true;return}
   go.disabled=false; const n=PR.brancas?p.tiles.length:p.tiles.filter(t=>t.used).length;
-  info.innerHTML=`Área dos moldes: <b>${fmt(p.b.w)} × ${fmt(p.b.h)} cm</b> · área útil por folha ${fmt(p.tw)} × ${fmt(p.th)} cm → <b>${n} folha${n>1?'s':''} ${PAPER[PR.paper][2]}</b> (${p.cols} coluna${p.cols>1?'s':''} × ${p.rows} linha${p.rows>1?'s':''}${!PR.brancas&&n<p.tiles.length?`, ${p.tiles.length-n} em branco omitida${p.tiles.length-n>1?'s':''}`:''}).`;
+  info.innerHTML=`Área dos moldes: <b>${fmt(p.b.w)} × ${fmt(p.b.h)} cm</b> · área útil por folha ${fmt(p.tw)} × ${fmt(p.th)} cm → <b>${n} folha${n>1?'s':''} ${p.name}</b> (página ${fmt(p.W)} × ${fmt(p.H)} cm; ${p.cols} coluna${p.cols>1?'s':''} × ${p.rows} linha${p.rows>1?'s':''}${!PR.brancas&&n<p.tiles.length?`, ${p.tiles.length-n} em branco omitida${p.tiles.length-n>1?'s':''}`:''}).`;
 }
 $('#prPaper').addEventListener('change',e=>{PR.paper=e.target.value;savePR();updPrint()});
 $('#prCustom').addEventListener('change',e=>{PR.custom=e.target.checked;savePR();updPrint()});
+[['#prRoll','roll'],['#prCW','cw'],['#prCH','ch']].forEach(([s,k])=>$(s).addEventListener('input',e=>{const v=parseFloat(e.target.value);if(v>0){PR[k]=v;savePR();updPrint()}}));
 document.querySelectorAll('input[name="prOr"]').forEach(r=>r.addEventListener('change',()=>{if(r.checked){PR.orient=r.value;savePR();updPrint()}}));
 $('#prHelp').addEventListener('click',()=>{const t=$('#prHelpText');t.hidden=!t.hidden});
 function hexRGB(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]}
