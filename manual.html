@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manual do Ateliê de Moldes Gleici Costuras</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c2420;--muted:#5d6862;--line:#d8ded7;--accent:#0f6b5d;--soft:#eef3ef;--paper:#fff;--hl:#ff8a00}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 "Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left,0px)) 64px}
+header.cover{text-align:center;padding:24px 0 8px}
+.banner{background:radial-gradient(120% 150% at 25% 40%,#4a1717 0%,#1d1615 50%,#110e0d 100%);border-radius:16px;padding:18px 12px;box-shadow:inset 0 0 0 1px rgba(240,181,74,.2)}
+header.cover img{width:min(520px,92%);height:auto;display:block;margin:0 auto}
+h1{font-size:clamp(26px,4vw,38px);margin:12px 0 4px;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 20px}
+nav.toc{border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:18px 0 8px;background:var(--soft)}
+nav.toc ol{columns:3 220px;margin:6px 0 0;padding-left:20px}
+nav.toc a{color:var(--accent);text-decoration:none} nav.toc a:hover{text-decoration:underline}
+.tool{border-top:1px solid var(--line);padding:30px 0 10px;break-inside:avoid;page-break-inside:avoid}
+.eyebrow{margin:0;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h2{margin:2px 0 4px;font-size:24px;text-wrap:balance}
+.lead{margin:0 0 14px;color:var(--muted);max-width:70ch}
+.pair{display:grid;grid-template-columns:minmax(0,3.1fr) minmax(0,1fr);gap:14px;align-items:start}
+figure{margin:0} figure img{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+figcaption{font-size:12px;color:var(--muted);margin-top:4px;text-align:center}
+.how{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:14px}
+h3{font-size:14px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.06em}
+ol{margin:0;padding-left:20px} li{margin:2px 0}
+.tip{background:var(--soft);border-left:4px solid var(--hl);padding:8px 12px;border-radius:6px;margin:14px 0 0}
+.legend{font-size:13px;color:var(--muted)}
+footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center}
+@media (max-width:720px){.pair{grid-template-columns:1fr 1fr}.pair .pc{grid-column:1/-1}.pair .ph{grid-column:1/2}.how{grid-template-columns:1fr}}
+@page{size:A4;margin:13mm 12mm}
+@media print{body{font-size:11pt}header.cover{padding:0}.banner{padding:8px}header.cover img{width:55%}h1{font-size:24pt;margin:8px 0 0}.sub{margin:0 0 8px}.legend{font-size:9pt;margin:4px 0}nav.toc{padding:8px 12px;font-size:9.5pt;line-height:1.45}nav.toc ol{columns:3;margin-top:2px}nav.toc li{margin:0}.wrap{max-width:none;padding:0}nav.toc{break-after:page}.tool{break-before:page;padding-top:0;border:0}a{color:inherit}}
+</style></head>
+<body><div class="wrap">
+<header class="cover"><div class="banner"><img src="imagens/art.webp" alt="Ateliê Gleici Costuras" onerror="this.parentNode.remove()"></div>
+<h1>Manual do Ateliê de Moldes</h1><p class="sub">Como usar cada ferramenta, no computador e no celular.</p></header>
+<p class="legend">Nas fotos, a ferramenta usada aparece com contorno laranja. A seta indica onde clicar no computador; o círculo laranja indica onde tocar no celular. Na lupa do celular aparece ampliado o que está embaixo do dedo.</p>
+<nav class="toc" aria-label="Sumário"><b>Sumário</b><ol><li><a href="#27-barra-de-cima">Barras e modos de tela</a></li><li><a href="#30-novo-molde">Novo molde</a></li><li><a href="#31-meus-moldes">Meus moldes</a></li><li><a href="#01-selecionar">Selecionar (V)</a></li><li><a href="#02-retangulo">Retângulo (R)</a></li><li><a href="#03-elipse">Elipse (E)</a></li><li><a href="#04-linha">Linha (L)</a></li><li><a href="#05-curva">Curva (C)</a></li><li><a href="#06-estender">Estender linha (X)</a></li><li><a href="#07-mao-livre">Mão livre (P)</a></li><li><a href="#08-pontos">Marcar pontos (.)</a></li><li><a href="#09-texto">Texto (T)</a></li><li><a href="#10-digitalizacao">Digitalização de moldes (I)</a></li><li><a href="#11-perimetro">Redefinir perímetros</a></li><li><a href="#12-gerar-molde">Gerar molde</a></li><li><a href="#13-fita-metrica">Fita métrica (M)</a></li><li><a href="#14-margem">Margem de costura</a></li><li><a href="#15-bainha">Bainha</a></li><li><a href="#16-desdobrar">Desdobrar molde</a></li><li><a href="#17-dobrar">Dobrar molde</a></li><li><a href="#18-pique">Marcar pique (N)</a></li><li><a href="#19-pence">Pence (D)</a></li><li><a href="#20-alinhar">Alinhar pontos</a></li><li><a href="#21-paralelas">Linhas paralelas</a></li><li><a href="#22-conferencia">Conferência por aproximação</a></li><li><a href="#23-tabela">Tabela de medidas</a></li><li><a href="#24-gradacao">Gradação</a></li><li><a href="#25-gradacao-auto">Gradação automática</a></li><li><a href="#26-copiar-gradacao">Copiar gradação</a></li><li><a href="#28-redimensionar">Redimensionar</a></li><li><a href="#29-rotacionar">Rotacionar</a></li><li><a href="#33-imprimir">Imprimir</a></li><li><a href="#32-exportar">Exportar</a></li><li><a href="#34-fotografar">Fotografar moldes</a></li></ol></nav>
+<section class="tool" id="27-barra-de-cima">
+  <p class="eyebrow">Começando</p><h2>Barras e modos de tela</h2><p class="lead">O editor tem a barra de ferramentas (à esquerda no computador, embaixo no celular), a área de desenho no meio e o painel de opções (à direita no computador, numa gaveta no celular).</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-27-barra-de-cima.webp" alt="Barras e modos de tela no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-27-barra-de-cima.webp" alt="Barras e modos de tela no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Os números na foto indicam os botões da barra de cima: 1 Meus moldes · 2 Mais zoom · 3 Menos zoom · 4 Desfazer · 5 Refazer · 6 Ímã · 7 Guias · 8 Mostrar medidas · 9 Esconder pontos · 10 Suavizar curvas · 11 Redimensionar · 12 Rotacionar · 13 Inverter na vertical · 14 Inverter na horizontal · 15 Reorganizar painéis · 16 Travar · 17 Fotografar moldes · 18 Imprimir · 19 Remover · 20 Modo celular · 21 Tema claro/escuro.</li><li>Gire a rodinha do mouse para dar zoom. Segure Espaço (ou o botão do meio do mouse) e arraste para mover a tela.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Na barra de cima ficam só 1 Meus moldes · 2 Desfazer · 3 Refazer · 4 Remover · 5 Mais ações (⋯) · 6 Painel.</li><li>Toque em ⋯ para abrir a folha Mais ações, com zoom, ímã, guias, girar, inverter, travar, imprimir, exportar, tema e outras.</li><li>Arraste com um dedo para mover a tela (na ferramenta Selecionar). Use dois dedos para dar zoom.</li><li>A etiqueta no canto mostra a ferramenta ativa. Toque em Opções para abrir as opções dela e em Fechar para esconder.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> O modo celular liga sozinho em telas de celular. Para trocar à mão: botão de celular/computador na barra de cima, ou Meus moldes → Modo da tela.</p>
+</section><section class="tool" id="30-novo-molde">
+  <p class="eyebrow">Começando</p><h2>Novo molde</h2><p class="lead">Cria um projeto novo, com nome, tecido e o tamanho da área de impressão.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-30-novo-molde.webp" alt="Novo molde no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-30-novo-molde.webp" alt="Novo molde no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique na pasta (canto superior esquerdo) → + Novo molde.</li><li>Preencha Nome/Referência (obrigatório), tecido e observação.</li><li>Ajuste a largura e a altura da área de impressão.</li><li>Se quiser, arraste a ficha técnica ou uma foto da peça para o quadro da direita.</li><li>Clique em Criar Molde.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque na pasta → + Novo molde.</li><li>Preencha os campos e toque em Criar Molde.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> A área de impressão é só a referência da folha: dá para desenhar fora dela.</p>
+</section><section class="tool" id="31-meus-moldes">
+  <p class="eyebrow">Começando</p><h2>Meus moldes</h2><p class="lead">Lista os projetos salvos neste navegador e dá acesso a novo molde, exportar, importar e modo da tela.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-31-meus-moldes.webp" alt="Meus moldes no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-31-meus-moldes.webp" alt="Meus moldes no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique na pasta.</li><li>Clique no nome de um molde para abri-lo.</li><li>Excluir pede um segundo clique para confirmar.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque na pasta. O mesmo menu aparece por cima da tela.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Os moldes ficam salvos no navegador. Para guardar uma cópia, use Exportar → Projeto (.json).</p>
+</section><section class="tool" id="01-selecionar">
+  <p class="eyebrow">Desenho</p><h2>Selecionar (V)</h2><p class="lead">Seleciona, move e edita as peças e os pontos.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-01-selecionar.webp" alt="Selecionar (V) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-01-selecionar.webp" alt="Selecionar (V) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique numa peça para selecioná-la e arraste para mover.</li><li>Arraste os quadradinhos e bolinhas para editar os pontos.</li><li>Duplo clique numa linha cria um ponto; duplo clique num ponto alterna entre canto e curva.</li><li>Solte um ponto em cima de outro da mesma linha para uni-los.</li><li>Arraste numa área vazia para selecionar várias peças.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque numa peça para selecioná-la e arraste para mover.</li><li>Arraste os pontos com o dedo; a lupa mostra o detalhe.</li><li>Toque em Opções para ver as propriedades da peça.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Com uma peça selecionada, o painel mostra posição, tamanho, nome, quantidade de cortes, fio, tecido e encolhimento.</p>
+</section><section class="tool" id="02-retangulo">
+  <p class="eyebrow">Desenho</p><h2>Retângulo (R)</h2><p class="lead">Desenha um retângulo de construção.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-02-retangulo.webp" alt="Retângulo (R) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-02-retangulo.webp" alt="Retângulo (R) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Escolha Retângulo.</li><li>Clique e arraste de um canto ao outro. A largura aparece em cima e a altura do lado.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Escolha Retângulo na barra de baixo.</li><li>Arraste o dedo de um canto ao outro; a lupa mostra a ponta.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Com o ímã ligado, os cantos encaixam na grade (0,5 cm, ou 1 mm com bastante zoom) e nos pontos existentes.</p>
+</section><section class="tool" id="03-elipse">
+  <p class="eyebrow">Desenho</p><h2>Elipse (E)</h2><p class="lead">Desenha uma elipse feita de pontos de curva editáveis.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-03-elipse.webp" alt="Elipse (E) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-03-elipse.webp" alt="Elipse (E) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Escolha Elipse.</li><li>Clique e arraste a caixa da elipse.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Escolha Elipse e arraste o dedo.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Depois, use Selecionar para ajustar os pontos da elipse.</p>
+</section><section class="tool" id="04-linha">
+  <p class="eyebrow">Desenho</p><h2>Linha (L)</h2><p class="lead">Desenha uma linha reta por vez, que se prende às linhas existentes para tudo ficar conectado.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-04-linha.webp" alt="Linha (L) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-04-linha.webp" alt="Linha (L) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique e arraste, ou clique no início e depois no fim.</li><li>O quadrado indica que o cursor está preso numa ponta; o losango, preso no meio de uma linha.</li><li>Segure Shift para travar em 0°, 45° ou 90°.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Arraste o dedo do início ao fim da linha.</li><li>A lupa mostra quando a ponta está presa em outra linha.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Linhas bem conectadas são o que permite usar Gerar molde depois.</p>
+</section><section class="tool" id="05-curva">
+  <p class="eyebrow">Desenho</p><h2>Curva (C)</h2><p class="lead">Desenha uma curva suave passando pelos pontos clicados.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-05-curva.webp" alt="Curva (C) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-05-curva.webp" alt="Curva (C) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique para adicionar pontos de curva.</li><li>Clique no primeiro ponto para fechar a forma, ou dê duplo clique (ou Enter) para terminar aberta.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque para adicionar pontos (cada ponto entra quando você levanta o dedo).</li><li>Use os botões Concluir curva ou Fechar forma, nas Opções.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="06-estender">
+  <p class="eyebrow">Desenho</p><h2>Estender linha (X)</h2><p class="lead">Aumenta ou encurta uma linha aberta mantendo a mesma direção.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-06-estender.webp" alt="Estender linha (X) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-06-estender.webp" alt="Estender linha (X) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique na ponta de uma linha e arraste. O acréscimo aparece em cm.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Arraste a ponta da linha com o dedo.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="07-mao-livre">
+  <p class="eyebrow">Desenho</p><h2>Mão livre (P)</h2><p class="lead">Desenho livre que vira uma curva com pontos de controle.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-07-mao-livre.webp" alt="Mão livre (P) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-07-mao-livre.webp" alt="Mão livre (P) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Desenhe arrastando. O comprimento total aparece enquanto você desenha.</li><li>Termine perto do início para fechar a forma.</li><li>Arraste os pontos para ajustar; duplo clique alterna canto/curva.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Desenhe com o dedo e ajuste os pontos em seguida.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Suavizar curvas (barra de cima) remove pontos em excesso de um traço tremido.</p>
+</section><section class="tool" id="08-pontos">
+  <p class="eyebrow">Desenho</p><h2>Marcar pontos (.)</h2><p class="lead">Marca pontos de referência.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-08-pontos.webp" alt="Marcar pontos (.) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-08-pontos.webp" alt="Marcar pontos (.) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique onde o ponto deve ficar.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Encoste o dedo, ajuste olhando a lupa e solte.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="09-texto">
+  <p class="eyebrow">Desenho</p><h2>Texto (T)</h2><p class="lead">Escreve textos no molde.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-09-texto.webp" alt="Texto (T) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-09-texto.webp" alt="Texto (T) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Escolha o tamanho nas opções e clique onde o texto deve ficar.</li><li>Digite o texto no painel.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque onde o texto deve ficar e digite no painel (Opções).</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="10-digitalizacao">
+  <p class="eyebrow">Moldes</p><h2>Digitalização de moldes (I)</h2><p class="lead">Transforma a foto de um molde de papel em molde digital.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-10-digitalizacao.webp" alt="Digitalização de moldes (I) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-10-digitalizacao.webp" alt="Digitalização de moldes (I) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Fotografe o molde sobre um fundo escuro e liso, com uma régua na foto.</li><li>Clique na ferramenta e escolha a foto.</li><li>1. Escala: arraste sobre uma medida conhecida da foto, digite o valor real e clique em Aplicar escala.</li><li>2. Contorno: clique em Detectar contorno, ou contorne à mão com Linha e Curva.</li><li>Use Gerar molde no contorno.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque na ferramenta e escolha a foto (pode tirar na hora).</li><li>Siga os mesmos passos pelas Opções.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Confira as medidas depois: a detecção automática funciona melhor com bom contraste.</p>
+</section><section class="tool" id="11-perimetro">
+  <p class="eyebrow">Moldes</p><h2>Redefinir perímetros</h2><p class="lead">Muda o comprimento de uma linha para um valor exato.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-11-perimetro.webp" alt="Redefinir perímetros no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-11-perimetro.webp" alt="Redefinir perímetros no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique na linha.</li><li>Digite o novo comprimento.</li><li>Escolha o modo: Bidirecional (estica as duas pontas), Unidirecional (só a ponta final) ou Manter extremos (curva a linha sem mover as pontas).</li><li>Clique em Redefinir.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque na linha, abra as Opções, digite o comprimento e toque em Redefinir.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="12-gerar-molde">
+  <p class="eyebrow">Moldes</p><h2>Gerar molde</h2><p class="lead">Transforma uma área fechada por linhas de construção numa peça de molde.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-12-gerar-molde.webp" alt="Gerar molde no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-12-gerar-molde.webp" alt="Gerar molde no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique nas linhas que formam o contorno, uma por uma (ou clique dentro da área fechada).</li><li>Quando o contorno fecha, a área fica preenchida.</li><li>Preencha nome, tamanho do texto, sentido do fio, rotação, quantidade, par e dobra.</li><li>Clique em Gerar molde.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque nas linhas do contorno, abra as Opções e toque em Gerar molde.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Folgas pequenas entre as linhas (até cerca de 0,6 cm) são emendadas automaticamente.</p>
+</section><section class="tool" id="13-fita-metrica">
+  <p class="eyebrow">Moldes</p><h2>Fita métrica (M)</h2><p class="lead">Mede linhas, margens e distâncias.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-13-fita-metrica.webp" alt="Fita métrica (M) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-13-fita-metrica.webp" alt="Fita métrica (M) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Passe o mouse sobre uma linha ou margem para ver a medida.</li><li>Cada clique cria uma régua emendada na anterior, com o total. Duplo clique ou Enter termina; Esc apaga.</li><li>Adicionar valor soma a sequência na tabela; Shift+clique numa linha soma o comprimento dela em cada tamanho.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque para criar as réguas e use Encerrar réguas nas Opções.</li><li>No celular não há passar o mouse: use as réguas.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="14-margem">
+  <p class="eyebrow">Moldes</p><h2>Margem de costura</h2><p class="lead">Adiciona margem de costura às linhas do molde, para fora ou para dentro.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-14-margem.webp" alt="Margem de costura no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-14-margem.webp" alt="Margem de costura no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Defina a margem Inicial (e Final, se ela variar ao longo da linha) e o acabamento.</li><li>Passe o mouse sobre uma linha: com o mouse fora do molde a margem vai para fora; dentro, para dentro.</li><li>Clique para aplicar.</li><li>Use os botões para aplicar em todo o painel, remover a costura ou deixar o contorno pontilhado.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Encoste o dedo perto da linha, do lado onde a margem deve ficar. A lupa mostra a prévia; solte para aplicar.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="15-bainha">
+  <p class="eyebrow">Moldes</p><h2>Bainha</h2><p class="lead">Margem da barra com dobras e piques.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-15-bainha.webp" alt="Bainha no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-15-bainha.webp" alt="Bainha no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Defina a largura, o número de dobras e se quer piques nas dobras.</li><li>Clique na linha da barra.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Ajuste nas Opções e toque na linha da barra.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> A margem da barra fica largura × dobras.</p>
+</section><section class="tool" id="16-desdobrar">
+  <p class="eyebrow">Moldes</p><h2>Desdobrar molde</h2><p class="lead">Espelha a peça para gerar a peça inteira.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-16-desdobrar.webp" alt="Desdobrar molde no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-16-desdobrar.webp" alt="Desdobrar molde no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique numa linha reta para espelhar sobre ela, ou dentro de uma peça cortada na dobra.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque na linha ou dentro da peça.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="17-dobrar">
+  <p class="eyebrow">Moldes</p><h2>Dobrar molde</h2><p class="lead">Dobra uma peça simétrica ao meio, no eixo vertical, e marca como cortar na dobra.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-17-dobrar.webp" alt="Dobrar molde no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-17-dobrar.webp" alt="Dobrar molde no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique dentro de uma peça simétrica.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque dentro da peça.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> A peça precisa ter pontos sobre o eixo central, como as peças desdobradas.</p>
+</section><section class="tool" id="18-pique">
+  <p class="eyebrow">Moldes</p><h2>Marcar pique (N)</h2><p class="lead">Marca piques no contorno e marcações internas.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-18-pique.webp" alt="Marcar pique (N) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-18-pique.webp" alt="Marcar pique (N) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Escolha o ícone e o tamanho nas opções.</li><li>Clique no contorno para um pique, ou dentro do molde para uma marcação interna (furo, bolso).</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Encoste o dedo, deslize até a linha olhando a lupa e solte.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="19-pence">
+  <p class="eyebrow">Moldes</p><h2>Pence (D)</h2><p class="lead">Insere uma pence no contorno.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-19-pence.webp" alt="Pence (D) no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-19-pence.webp" alt="Pence (D) no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Defina abertura e profundidade.</li><li>Clique no contorno onde fica o centro da pence.</li><li>Com Abrir molde, a pence entra no contorno; sem essa opção, só as pernas são desenhadas por dentro.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Ajuste nas Opções, encoste o dedo no contorno e solte.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="20-alinhar">
+  <p class="eyebrow">Ajustes</p><h2>Alinhar pontos</h2><p class="lead">Alinha pontos na horizontal ou na vertical.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-20-alinhar.webp" alt="Alinhar pontos no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-20-alinhar.webp" alt="Alinhar pontos no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique nos pontos (o primeiro é a referência).</li><li>Escolha o sentido e clique em Aplicar.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque nos pontos e use Aplicar nas Opções.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="21-paralelas">
+  <p class="eyebrow">Ajustes</p><h2>Linhas paralelas</h2><p class="lead">Cria uma linha paralela a uma distância definida.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-21-paralelas.webp" alt="Linhas paralelas no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-21-paralelas.webp" alt="Linhas paralelas no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Defina a distância.</li><li>Clique perto da linha, do lado em que a paralela deve aparecer.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque do lado em que a paralela deve aparecer.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="22-conferencia">
+  <p class="eyebrow">Ajustes</p><h2>Conferência por aproximação</h2><p class="lead">Compara as linhas de duas peças que serão costuradas juntas.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-22-conferencia.webp" alt="Conferência por aproximação no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-22-conferencia.webp" alt="Conferência por aproximação no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique na linha da peça de referência (A) e depois na da outra peça (B).</li><li>O painel mostra os dois comprimentos e a diferença.</li><li>Aplicar encosta a peça B na A para conferir visualmente.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque nas duas linhas e veja o resultado nas Opções.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="23-tabela">
+  <p class="eyebrow">Ajustes</p><h2>Tabela de medidas</h2><p class="lead">Tabela de medidas por tamanho (busto, cintura, quadril…).</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-23-tabela.webp" alt="Tabela de medidas no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-23-tabela.webp" alt="Tabela de medidas no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique em + Nova Medida e preencha os valores de cada tamanho.</li><li>Fixar mantém a tabela visível sobre o desenho.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Abra as Opções para editar a tabela.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="24-gradacao">
+  <p class="eyebrow">Gradação</p><h2>Gradação</h2><p class="lead">Define os tamanhos e quanto cada ponto anda em cada um.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-24-gradacao.webp" alt="Gradação no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-24-gradacao.webp" alt="Gradação no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Use + para criar tamanhos, com nome e cor.</li><li>Clique num ponto do molde e informe X e Y (cm) para cada tamanho.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque no ponto e preencha X e Y nas Opções.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Os tamanhos aparecem como contornos coloridos em volta da peça.</p>
+</section><section class="tool" id="25-gradacao-auto">
+  <p class="eyebrow">Gradação</p><h2>Gradação automática</h2><p class="lead">Calcula a gradação de toda a peça a partir de quanto ela cresce.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-25-gradacao-auto.webp" alt="Gradação automática no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-25-gradacao-auto.webp" alt="Gradação automática no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique na peça.</li><li>Informe quanto a peça cresce em largura e altura em cada tamanho.</li><li>Clique em Aplicar na peça.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque na peça e use Aplicar na peça nas Opções.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="26-copiar-gradacao">
+  <p class="eyebrow">Gradação</p><h2>Copiar gradação</h2><p class="lead">Copia a gradação de um ponto para outros.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-26-copiar-gradacao.webp" alt="Copiar gradação no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-26-copiar-gradacao.webp" alt="Copiar gradação no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Escolha copiar X, Y ou os dois.</li><li>Clique no ponto de origem e depois nos pontos de destino.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque no ponto de origem e depois nos de destino.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="28-redimensionar">
+  <p class="eyebrow">Barra de cima</p><h2>Redimensionar</h2><p class="lead">Ajusta o tamanho da forma arrastando alças.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-28-redimensionar.webp" alt="Redimensionar no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-28-redimensionar.webp" alt="Redimensionar no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Selecione a peça e ligue Redimensionar.</li><li>Arraste um canto para mudar largura e altura (Shift mantém a proporção), ou uma alça do meio para mudar só um lado.</li><li>Para valores exatos, use L e A no painel.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>No celular, Redimensionar fica na barra de baixo, ao lado de Selecionar.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="29-rotacionar">
+  <p class="eyebrow">Barra de cima</p><h2>Rotacionar</h2><p class="lead">Gira a seleção.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-29-rotacionar.webp" alt="Rotacionar no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-29-rotacionar.webp" alt="Rotacionar no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Selecione a peça, clique em Rotacionar, digite o ângulo ou use −90°, +90° e 180°.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque em ⋯ → Rotacionar.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Inverter na vertical e na horizontal ficam ao lado, na barra de cima (no celular, em ⋯).</p>
+</section><section class="tool" id="33-imprimir">
+  <p class="eyebrow">Saída</p><h2>Imprimir</h2><p class="lead">Gera um PDF em tamanho real, dividido em folhas numeradas para colar.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-33-imprimir.webp" alt="Imprimir no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-33-imprimir.webp" alt="Imprimir no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique em Imprimir.</li><li>Escolha o que imprimir, o papel (A4 a A0, Carta, Ofício, Tabloide, Plotter, Customizar ou Dimensões totais), as margens e a orientação.</li><li>Clique em Imprimir para baixar o PDF.</li><li>Cole as folhas pela numeração coluna-linha: 1-1, 1-2… descem pela primeira coluna.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque em ⋯ → Imprimir.</li></ol></div>
+  </div>
+  <p class="tip"><b>Dica:</b> Na impressora, escolha tamanho real (100%), sem ajustar à página, e confira uma medida com a régua.</p>
+</section><section class="tool" id="32-exportar">
+  <p class="eyebrow">Saída</p><h2>Exportar</h2><p class="lead">Salva o molde em outros formatos.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-32-exportar.webp" alt="Exportar no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-32-exportar.webp" alt="Exportar no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Pasta → Exportar.</li><li>SVG (escala real), DXF em mm para plotter e máquinas de corte, ou Projeto (.json) para abrir de novo aqui.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Pasta → Exportar.</li></ol></div>
+  </div>
+  
+</section><section class="tool" id="34-fotografar">
+  <p class="eyebrow">Saída</p><h2>Fotografar moldes</h2><p class="lead">Gera uma imagem PNG do que está na tela.</p>
+  <div class="pair">
+    <figure class="pc"><img src="manual/computador-34-fotografar.webp" alt="Fotografar moldes no computador" loading="lazy" width="1366" height="768"><figcaption>Computador</figcaption></figure>
+    <figure class="ph"><img src="manual/celular-34-fotografar.webp" alt="Fotografar moldes no celular" loading="lazy" width="492" height="900"><figcaption>Celular</figcaption></figure>
+  </div>
+  <div class="how">
+    <div><h3>No computador</h3><ol><li>Clique em Fotografar moldes e use Baixar PNG ou Copiar imagem.</li></ol></div>
+    <div><h3>No celular</h3><ol><li>Toque em ⋯ → Fotografar moldes.</li></ol></div>
+  </div>
+  
+</section>
+<footer>Ateliê de Moldes Gleici Costuras · <a href="./">abrir o editor</a></footer>
+</div></body></html>
