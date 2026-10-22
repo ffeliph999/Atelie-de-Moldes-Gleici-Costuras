@@ -1243,16 +1243,18 @@ function panelPath(s){
   if(selPoint&&selPoint.id===s.id&&s.pts[selPoint.i]){const p=s.pts[selPoint.i];
     pt=sec(`Ponto ${selPoint.i+1}`,`<div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${rowI('X',`<input type="number" step="0.1" id="pt-x" data-pt="x">`,'cm')}${rowI('Y',`<input type="number" step="0.1" id="pt-y" data-pt="y">`,'cm')}</div>
       <div class="chips"><button class="chip${p.s?'':' on'}" data-act="ptCorner">Canto</button><button class="chip${p.s?' on':''}" data-act="ptSmooth">Curva</button></div>${btn('delPt','Remover ponto','danger')}`)}
-  if(!s.piece) return sec(s.closed?'Forma de construção':'Linha de construção',lock+`<dl class="stats"><dt>${s.closed?'Perímetro':'Comprimento'}</dt><dd data-stat="len"></dd><dt>Largura</dt><dd data-stat="w"></dd><dt>Altura</dt><dd data-stat="h"></dd></dl>`+
-    hint(s.closed?'Use <b>Gerar molde</b> e clique dentro dela para transformar em molde.':'Linhas de construção ajudam a desenhar. Feche áreas com elas e use <b>Gerar molde</b>.')+
-    `<div class="acts">${!s.closed&&s.pts.length>=3?btn('closePath','Fechar forma'):''}${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)+pt;
   const ck=(k,l,def)=>`<label class="chk" style="justify-content:space-between">${l}<input type="checkbox" id="p-${k}" data-k="${k}"${(s[k]??def)?' checked':''}></label>`;
   const two=(a,b)=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${a}${b}</div>`;
   const sm=(l,inp,unit)=>`<label class="row" style="grid-template-columns:18px minmax(0,1fr)"><span>${l}</span>${u(inp,unit)}</label>`;
-  return sec('Posição e tamanho',lock+
-     two(sm('L',`<input type="number" step="0.1" min="0.1" id="p-bw" data-k="bw">`,'cm'),sm('X',`<input type="number" step="0.1" id="p-bx" data-k="bx">`,'cm'))+
+  const posFields=two(sm('L',`<input type="number" step="0.1" min="0.1" id="p-bw" data-k="bw">`,'cm'),sm('X',`<input type="number" step="0.1" id="p-bx" data-k="bx">`,'cm'))+
      two(sm('A',`<input type="number" step="0.1" min="0.1" id="p-bh" data-k="bh">`,'cm'),sm('Y',`<input type="number" step="0.1" id="p-by" data-k="by">`,'cm'))+
-     two(`<label class="chk"><input type="checkbox" id="p-keepRatio" data-k="keepRatio"${s.keepRatio!==false?' checked':''}> Proporcional</label>`,sm('↻',`<input type="number" step="1" id="p-rotNow" data-k="rotNow" value="${s.rotNow||0}">`,'°'))+
+     two(`<label class="chk"><input type="checkbox" id="p-keepRatio" data-k="keepRatio"${keepRatioOf(s)?' checked':''}> Proporcional</label>`,sm('↻',`<input type="number" step="1" id="p-rotNow" data-k="rotNow" value="${s.rotNow||0}">`,'°'));
+  if(!s.piece){ const line2=!s.closed&&s.pts.length===2&&straight(s.pts,0);
+    return sec(s.closed?'Forma de construção':'Linha de construção',lock+posFields+
+      (line2?rowI('Comprimento:',`<input type="number" step="0.1" min="0.1" id="p-lineLen" data-k="lineLen">`,'cm'):`<dl class="stats"><dt>${s.closed?'Perímetro':'Comprimento'}</dt><dd data-stat="len"></dd></dl>`)+
+      hint(s.closed?'Use <b>Gerar molde</b> e clique dentro dela para transformar em molde.':'Linhas de construção ajudam a desenhar. Feche áreas com elas e use <b>Gerar molde</b>.')+
+      `<div class="acts">${!s.closed&&s.pts.length>=3?btn('closePath','Fechar forma'):''}${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)+pt; }
+  return sec('Posição e tamanho',lock+posFields+
      `<dl class="stats"><dt>Perímetro</dt><dd data-stat="len"></dd><dt>Área</dt><dd data-stat="area"></dd></dl>`)+
    sec('Propriedades',
     `${rowI('Nome do painel:',`<input id="p-name" data-k="name" value="${esc(s.name)}">`)}
@@ -1299,12 +1301,15 @@ function bindPanel(root){
   root.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{sel=new Set([b.dataset.pick]);selPoint=null;renderPanel();render();updateButtons()}));
 }
 function flushPending(){if(pending&&pending!==snap0())pushUndo(pending);pending=null;updateButtons()}
+// typed width/height keep the proportions by default on pattern pieces, not on construction shapes
+function keepRatioOf(s){return s.piece?s.keepRatio!==false:s.keepRatio===true}
 function setField(el){
   const k=el.dataset.k; let v=el.type==='checkbox'?el.checked:el.type==='number'?parseFloat(el.value):el.value;
   if(el.type==='number'&&!isFinite(v)) return; const sh=selShapes()[0]; if(!sh) return;
   if(k==='bx'||k==='by'){const b=shapeBox(sh);translate(new Set([sh.id]),k==='bx'?{x:v-b.x,y:0}:{x:0,y:v-b.y});return}
   if(sh.type==='image'&&k==='w'){const r=sh.h/sh.w;sh.w=Math.max(.5,v);sh.h=sh.w*r;return}
-  if(k==='bw'||k==='bh'){if(sh.locked||!(v>0))return;const b=boxOf(sh.pts);let sx=k==='bw'?(b.w?v/b.w:1):1,sy=k==='bh'?(b.h?v/b.h:1):1;if(sh.keepRatio!==false){if(k==='bw')sy=sx;else sx=sy}
+  if(k==='lineLen'){if(sh.locked||!(v>0))return;const a=sh.pts[0],b=sh.pts[1],l=dist(a,b)||1;b.x=r3(a.x+(b.x-a.x)*v/l);b.y=r3(a.y+(b.y-a.y)*v/l);return}
+  if(k==='bw'||k==='bh'){if(sh.locked||!(v>0))return;const b=boxOf(sh.pts);let sx=k==='bw'?(b.w?v/b.w:1):1,sy=k==='bh'?(b.h?v/b.h:1):1;if(keepRatioOf(sh)){if(k==='bw')sy=sx;else sx=sy}
     xform(new Set([sh.id]),p=>({x:b.x+(p.x-b.x)*sx,y:b.y+(p.y-b.y)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})});return}
   if(k==='rotNow'){if(sh.locked)return;const d=v-(sh.rotNow||0),b=boxOf(sh.pts),c={x:b.x+b.w/2,y:b.y+b.h/2},a=d*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
     xform(new Set([sh.id]),p=>({x:c.x+(p.x-c.x)*co-(p.y-c.y)*si,y:c.y+(p.x-c.x)*si+(p.y-c.y)*co}),{grain:g=>g+d,vec:(x,y)=>({x:x*co-y*si,y:x*si+y*co})});sh.rotNow=v;return}
@@ -1317,6 +1322,7 @@ function updateStats(){
   const setI=(sel,v)=>{const e=panelBody.querySelector(sel);if(e&&document.activeElement!==e)e.value=r3(v)};
   if(sh.type==='path'){const P=sample(sh),b=boxOf(P);set('w',fmt(b.w)+' cm');set('h',fmt(b.h)+' cm');set('len',fmt(polyLen(P,sh.closed))+' cm');if(sh.closed)set('area',fmtArea(Math.abs(signedArea(P))*(sh.fold?2:1)));
     setI('[data-k="bx"]',b.x);setI('[data-k="by"]',b.y);const pb=boxOf(sh.pts);setI('[data-k="bw"]',pb.w);setI('[data-k="bh"]',pb.h);
+    if(!sh.closed&&sh.pts.length===2)setI('[data-k="lineLen"]',dist(sh.pts[0],sh.pts[1]));
     if(selPoint&&selPoint.id===sh.id&&sh.pts[selPoint.i]){setI('[data-pt="x"]',sh.pts[selPoint.i].x);setI('[data-pt="y"]',sh.pts[selPoint.i].y)}}
 }
 function updateButtons(){
