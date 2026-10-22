@@ -96,6 +96,8 @@ button{cursor:pointer}
 .hit{fill:none;stroke:transparent;pointer-events:stroke}
 .hitf{fill:transparent;stroke:none}
 .seam{fill:none;stroke:var(--seam);pointer-events:none}
+.safety{fill:none;stroke:#d9a300;pointer-events:none}
+.safehl{fill:none;stroke:#e8b100;pointer-events:none}
 .hemline{fill:none;stroke:var(--seam);pointer-events:none}
 .grain{fill:none;stroke:var(--ink);pointer-events:none}
 .notch{stroke:var(--ink);fill:none}
@@ -172,6 +174,15 @@ dl.stats dt{color:var(--muted)} dl.stats dd{margin:0;text-align:right;font-famil
 .dot{width:11px;height:11px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.15)}
 .mini{border:0;background:transparent;color:var(--muted);padding:2px 4px;border-radius:4px;font-size:12px;line-height:1}
 .mini:hover{background:var(--chrome-2);color:var(--ink)}
+.sbar{position:absolute;z-index:6;opacity:.4;transition:opacity .15s}
+.sbar:hover,.sbar.drag{opacity:.9}
+.sbar.sh{left:8px;right:16px;bottom:3px;height:10px}
+.sbar.sv{top:8px;bottom:16px;right:3px;width:10px}
+.sbar .thumb{position:absolute;background:var(--muted);border-radius:6px;transition:height .12s,width .12s,top .12s,left .12s}
+.sbar.sh .thumb{top:3px;height:4px}.sbar.sh:hover .thumb,.sbar.sh.drag .thumb{top:1px;height:8px}
+.sbar.sv .thumb{left:3px;width:4px}.sbar.sv:hover .thumb,.sbar.sv.drag .thumb{left:1px;width:8px}
+.app.mobile .sbar{opacity:.55}
+.texted{position:absolute;z-index:8;margin:0;padding:0 4px;border:1.5px dashed var(--accent);border-radius:4px;background:color-mix(in srgb,var(--paper) 70%,transparent);color:var(--ink);font-family:var(--font-ui);outline:none;line-height:1.3}
 .themes{display:grid;gap:4px}
 .themeopt{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--chrome-2);color:var(--ink);border-radius:7px;padding:7px 9px;text-align:left;font-size:12.5px}
 .themeopt.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -405,6 +416,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
       </svg>
       <div class="loupe" id="loupe" hidden aria-hidden="true"><svg id="loupeSvg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><use href="#world"/></svg></div>
       <div class="emptyart" id="emptyArt" hidden><img src="data:image/webp;base64,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" alt=""><p>Comece desenhando com <b>Retângulo</b>, <b>Linha</b> ou <b>Curva</b> e depois use <b>Gerar molde</b>.</p></div>
+      <div class="sbar sh" id="sbH" hidden><div class="thumb"></div></div><div class="sbar sv" id="sbV" hidden><div class="thumb"></div></div>
       <div class="status"><span id="stPos">x –  y –</span><span id="stSnap"></span></div>
       <div class="toolchip" id="toolChip"><span id="tcName">Selecionar</span><button id="tcBtn" data-act="panelToggle">Opções</button></div>
       <div class="float" id="float" hidden></div>
@@ -595,6 +607,7 @@ const SWATCH=['#5cb85c','#f2d21b','#f39c12','#e8604c','#c084e8','#1f78c1','#17be
 let lib={docs:{},current:null}, doc=null;
 let sel=new Set(), selPoint=null, tool='select', view={x:0,y:0,scale:8};
 let snapOn=true, guidesOn=false, measuresOn=false, hidePts=false;
+let gridOn=false; try{gridOn=localStorage.getItem('atelie-grid')==='1'}catch(e){}
 let undoS=[], redoS=[], drag=null, temp=null, measure=null, cursorW=null, cursorS=null, spaceDown=false, pending=null;
 let pick={}; // per-tool picking state
 let gradeView='list', newGrade={name:'',color:SWATCH[0]}, gradePoint=null;
@@ -605,7 +618,7 @@ let resizeMode=false; // top-bar "Redimensionar" toggles drag handles around the
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
 const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genGrainA:0,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
-  seamA:1,seamB:'',seamCf:'reto',hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
+  seamA:1,seamB:'',seamCf:'reto',safeD:.3,hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
   alignDir:'h',par:1,menor:true,tbBase:false,tbPin:false,tapeBase:false,tapePin:false,gcX:true,gcY:true};
 try{Object.assign(opt,JSON.parse(localStorage.getItem(OPTKEY)||'{}'))}catch(e){}
 function saveOpt(){try{localStorage.setItem(OPTKEY,JSON.stringify(opt))}catch(e){}}
@@ -675,6 +688,9 @@ const I={
  monitor:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/>',
  more:'<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',
  fit:'<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
+ grid:'<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>',
+ safety:'<path d="M12 3l7 3v5c0 4.6-3 8-7 10-4-2-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+ group:'<path d="M3 6h8v12H3zM13 6h8v12h-8z"/><path d="M11 9.5h2M11 14.5h2" stroke-width="2.4"/>',
  palette:'<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.3-.7-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4c0-4.7-4-8.7-9-8.7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7.2" r="1.2"/><circle cx="14.6" cy="7.2" r="1.2"/>'
 };
 const ic=n=>`<svg viewBox="0 0 24 24" aria-hidden="true">${I[n]||''}</svg>`;
@@ -682,12 +698,12 @@ const ic=n=>`<svg viewBox="0 0 24 24" aria-hidden="true">${I[n]||''}</svg>`;
 const RAIL=[
  ['select','Selecionar','V'],['rect','Retângulo','R'],['ellipse','Elipse','E'],['line','Linha','L'],['curve','Curva','C'],['extend','Estender linha','X'],['pencil','Mão livre','P'],['point','Marcar pontos','.'],['text','Texto','T'],'-',
  ['digitize','Digitalização de moldes'],['perim','Redefinir perímetros'],['generate','Gerar molde'],['tape','Fita métrica','M'],'-',
- ['seam','Margem de costura'],['hem','Bainha'],['unfold','Desdobrar molde'],['fold','Dobrar molde'],['notch','Marcar pique','N'],['dart','Pence','D'],'-',
+ ['seam','Margem de costura'],['safety','Margem de segurança'],['hem','Bainha'],['unfold','Desdobrar molde'],['fold','Dobrar molde'],['notch','Marcar pique','N'],['dart','Pence','D'],['group','Agrupar moldes'],'-',
  ['align','Alinhar pontos'],['parallel','Linhas paralelas'],['check','Conferência por aproximação'],['table','Tabela de medidas'],'-',
  ['grade','Gradação'],['gradeAuto','Gradação automática'],['gradeCopy','Copiar gradação']];
 const TNAME={};RAIL.forEach(r=>{if(r!=='-')TNAME[r[0]]=r[1]});TNAME.calibrate='Digitalização de moldes';
 const TOP=[['menu','Meus moldes, novo molde, exportar'],'|',['zin','Mais zoom (+)'],['zout','Menos zoom (−)'],'|',['undo','Desfazer (Ctrl+Z)'],['redo','Refazer (Ctrl+Y)'],'|',
- ['snap','Ímã (S)'],['guides','Guias (G)'],['measures','Mostrar medidas'],['hidePts','Esconder pontos'],'|',
+ ['snap','Ímã (S)'],['guides','Guias (G)'],['grid','Grade'],['measures','Mostrar medidas'],['hidePts','Esconder pontos'],'|',
  ['smooth','Suavizar curvas'],['resize','Redimensionar'],['rotate','Rotacionar'],['flipV','Inverter na vertical'],['flipH','Inverter na horizontal'],'|',
  ['arrange','Reorganizar painéis'],['lock','Travar'],'|',['photo','Fotografar moldes na tela'],['print','Imprimir'],['del','Remover (Delete)']];
 
@@ -786,10 +802,11 @@ function pieceAt(w,filter=s=>s.closed){
   return null;
 }
 function foldEdge(sh){
-  const P=sh.pts,n=P.length; if(!sh.closed||n<3) return null; const xs=P.map(p=>p.x);
+  const P=sh.pts,n=P.length; if(!sh.closed||n<3) return null; const xs=P.map(p=>p.x), C=[];
   for(const [X,side] of [[Math.min(...xs),'min'],[Math.max(...xs),'max']])
-    for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n];if(Math.abs(a.x-X)<.05&&Math.abs(b.x-X)<.05&&!a.s&&!b.s&&Math.abs(a.y-b.y)>.5)return{X,side,i}}
-  return null;
+    for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n];if(Math.abs(a.x-X)<.05&&Math.abs(b.x-X)<.05&&!a.s&&!b.s&&Math.abs(a.y-b.y)>.5)C.push({X,side,i})}
+  // a piece that was flipped or joined remembers its fold edge (start point marked .fe), since its outer straight edges may have swapped sides
+  return C.find(c=>P[c.i].fe)||C[0]||null;
 }
 // seam allowance polygon with per-segment start/end widths, fold edge = 0, optional bevel corners
 function seamPoly(sh,ptsOverride){
@@ -815,6 +832,48 @@ function seamPoly(sh,ptsOverride){
     out.push({x:p.x+vx,y:p.y+vy,seg:segOut});}
   return out; // out[j].seg = segment whose allowance runs from out[j] to out[j+1]
 }
+// cut line of a piece: the seam allowance outline when it grows outward, else the drawn outline; C[k].seg = segment of the edge C[k]→C[k+1]
+function cutPoly(sh,ptsOverride){
+  const src=ptsOverride?{...sh,pts:ptsOverride}:sh, S=seamPoly(sh,ptsOverride);
+  const Q=[]; for(const p of sample(src,true)){const l=Q[Q.length-1];if(!l||dist(p,l)>1e-4)Q.push(p)}
+  if(Q.length>2&&dist(Q[0],Q[Q.length-1])<1e-4)Q.pop(); if(Q.length<3) return null;
+  if(S&&Math.abs(signedArea(S))>Math.abs(signedArea(Q))) return S;
+  return Q.map((p,k)=>({x:p.x,y:p.y,seg:Q[(k+1)%Q.length].seg}));
+}
+// safety margin: extra space around the cut line, per segment (pts[i].sm, cm), used to keep pieces apart when cutting
+function hasSafety(sh){return sh.pts.some(p=>+p.sm>0)}
+function safetyPoly(sh,ptsOverride){
+  const C=cutPoly(sh,ptsOverride); if(!C) return null; const P=ptsOverride||sh.pts, n=C.length, sg=signedArea(C)>0?1:-1, N=[],D=[]; let any=false;
+  for(let k=0;k<n;k++){const a=C[k],b=C[(k+1)%n],dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;N.push({x:sg*dy/l,y:-sg*dx/l});const d=Math.max(0,+((P[a.seg]||{}).sm)||0);if(d)any=true;D.push(d)}
+  if(!any) return null; const out=[];
+  for(let k=0;k<n;k++){const p=C[k],k0=(k-1+n)%n,n1=N[k0],n2=N[k],d1=D[k0],d2=D[k],det=n1.x*n2.y-n1.y*n2.x;
+    let vx,vy; if(Math.abs(det)<1e-3){const d=Math.max(d1,d2);vx=n2.x*d;vy=n2.y*d}else{vx=(d1*n2.y-n1.y*d2)/det;vy=(n1.x*d2-d1*n2.x)/det}
+    const m=Math.hypot(vx,vy),lim=3*Math.max(d1,d2,.01); if(m>lim){vx*=lim/m;vy*=lim/m}
+    out.push({x:p.x+vx,y:p.y+vy,seg:p.seg});}
+  return out;
+}
+// grouped pieces (Agrupar moldes) share s.grp and move together
+function groupOf(id){const s=byId(id);if(!s||!s.grp)return [id];const m=doc.shapes.filter(x=>x.grp===s.grp).map(x=>x.id);return m.length>1?m:[id]}
+function groupsList(){const g={};for(const s of doc.shapes)if(s.grp&&s.piece)(g[s.grp]=g[s.grp]||[]).push(s);return Object.entries(g).filter(([,m])=>m.length>1)}
+function allowAt(sh,seg,t){const fe=sh.fold?foldEdge(sh):null;if(fe&&fe.i===seg)return 0;const sp=sh.pts[seg]||{};const e0=sp.e!=null?+sp.e:(+sh.seam||0),e1=(sp.e2!=null&&sp.e2!=='')?+sp.e2:e0;return Math.max(0,e0+(e1-e0)*t)}
+// turn and move piece B (with its group) so its edge at point ib lies against A's edge at point ia, cut line on cut line
+function joinPieces(A,ia,B,ib){
+  const nA=A.pts.length,nB=B.pts.length,pa={...A.pts[ia]},pb={...B.pts[ib]},SA=sample(A),SB=sample(B),cA=boxOf(SA),ca={x:cA.x+cA.w/2,y:cA.y+cA.h/2};
+  let best=null;
+  // B may be turned, or mirrored and turned (when "Permitir espelhar" is on); the fit that overlaps least and matches edge lengths best wins
+  for(const mr of B.mirror===false?[1]:[1,-1]) for(const da of [1,-1]) for(const db of [1,-1]){
+    const qa=A.pts[(ia+da+nA)%nA],qb=B.pts[(ib+db+nB)%nB],la=dist(pa,qa)||1,lb=dist(pb,qb)||1;
+    const th=Math.atan2(qa.y-pa.y,qa.x-pa.x)-Math.atan2(mr*(qb.y-pb.y),qb.x-pb.x),c=Math.cos(th),s=Math.sin(th);
+    const ux=(qa.x-pa.x)/la,uy=(qa.y-pa.y)/la; let nx=-uy,ny=ux; if((ca.x-pa.x)*nx+(ca.y-pa.y)*ny>0){nx=-nx;ny=-ny}
+    const off=allowAt(A,da===1?ia:(ia-1+nA)%nA,da===1?0:1)+allowAt(B,db===1?ib:(ib-1+nB)%nB,db===1?0:1);
+    const f=p=>{const x=p.x-pb.x,y=mr*(p.y-pb.y);return{x:pa.x+x*c-y*s+nx*off,y:pa.y+x*s+y*c+ny*off}};
+    const PB=SB.map(f); let ov=0; for(const q of PB)if(inPoly(q,SA))ov++; for(const q of SA)if(inPoly(q,PB))ov++;
+    const score=ov*1000+Math.abs(la-lb)+(mr<0?.01:0); if(!best||score<best.score)best={score,f,th,mr};
+  }
+  const ids=new Set(A.grp&&B.grp===A.grp?[B.id]:groupOf(B.id)), deg=best.th*180/Math.PI, c=Math.cos(best.th), s=Math.sin(best.th), mr=best.mr;
+  xform(ids,best.f,{grain:g=>norm360(mr*g+deg),vec:(x,y)=>({x:x*c-mr*y*s,y:x*s+mr*y*c})});
+  const g=A.grp||B.grp||uid(); for(const id of ids) byId(id).grp=g; A.grp=g;
+}
 function reflectFn(a,b){const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy||1;return p=>{const t=((p.x-a.x)*dx+(p.y-a.y)*dy)/l2,fx=a.x+dx*t,fy=a.y+dy*t;return{x:2*fx-p.x,y:2*fy-p.y}}}
 
 /* ---------- sizes / grading ---------- */
@@ -826,7 +885,8 @@ function hasGrade(sh){return sh.pts.some(p=>p.g&&Object.values(p.g).some(v=>v&&(
 function isChildOf(s,ids){return s.parent&&ids.has(s.parent)}
 function xform(ids,f,o={}){
   for(const s of doc.shapes){ if(!(ids.has(s.id)||isChildOf(s,ids))) continue;
-    if(s.type==='path'){ s.pts.forEach(p=>{ if(p.g&&o.vec){for(const k in p.g){const v=o.vec(+p.g[k].x||0,+p.g[k].y||0);p.g[k]={x:r3(v.x),y:r3(v.y)}}} const q=f(p);p.x=r3(q.x);p.y=r3(q.y);});
+    if(s.type==='path'){ if(s.fold&&!s.pts.some(p=>p.fe)){const fe=foldEdge(s);if(fe)s.pts[fe.i].fe=1}
+      s.pts.forEach(p=>{ if(p.g&&o.vec){for(const k in p.g){const v=o.vec(+p.g[k].x||0,+p.g[k].y||0);p.g[k]={x:r3(v.x),y:r3(v.y)}}} const q=f(p);p.x=r3(q.x);p.y=r3(q.y);});
       if(o.grain) s.grainA=o.grain(s.grainA??90); }
     else if(s.type==='notch'){const q=f(s),q2=f({x:s.x+Math.cos(s.a),y:s.y+Math.sin(s.a)});s.a=Math.atan2(q2.y-q.y,q2.x-q.x);s.x=r3(q.x);s.y=r3(q.y)}
     else if(s.type==='image'){ if(o.scale){s.w*=o.scale.sx;s.h*=o.scale.sy;const q=f({x:s.x,y:s.y});s.x=q.x;s.y=q.y} else {const c=f({x:s.x+s.w/2,y:s.y+s.h/2});s.x=c.x-s.w/2;s.y=c.y-s.h/2} }
@@ -904,6 +964,7 @@ function render(){
   svg.setAttribute('viewBox',`${view.x} ${view.y} ${vw} ${vh}`);
   $('#emptyArt').hidden=doc.shapes.length>0;
   renderSheet(vw,vh); renderImages(); G.shapes.innerHTML=shapesSVG(1/view.scale,false); renderOverlay(vw,vh); updateZoomLabel(); renderFloat();
+  updateScrollbars(vw,vh); placeTextEditor();
 }
 function renderSheet(vw,vh){
   const px=1/view.scale,W=doc.meta.largura,H=doc.meta.altura;
@@ -915,7 +976,7 @@ function renderSheet(vw,vh){
   let t='';const fs=10*px;
   for(let x=0;x<=W;x+=major) t+=`<text class="rul" x="${x}" y="${-4*px}" font-size="${fs}" text-anchor="middle">${x}</text>`;
   for(let y=major;y<=H;y+=major) t+=`<text class="rul" x="${-4*px}" y="${y+3*px}" font-size="${fs}" text-anchor="end">${y}</text>`;
-  G.sheet.innerHTML=`<rect class="sheet" x="0" y="0" width="${W}" height="${H}" stroke-width="${px}"/><path class="gmin" d="${a}" stroke-width="${px}"/><path class="gmaj" d="${b}" stroke-width="${px}"/>${t}`;
+  G.sheet.innerHTML=`<rect class="sheet" x="0" y="0" width="${W}" height="${H}" stroke-width="${px}"/>${gridOn?`<path class="gmin" d="${a}" stroke-width="${px}"/><path class="gmaj" d="${b}" stroke-width="${px}"/>`:''}${t}`;
 }
 function renderImages(){
   const keep=new Set();
@@ -943,6 +1004,7 @@ function shapesSVG(px,exp){
       const d=pathD(sh.pts,sh.closed);
       if(sh.piece&&sh.closed){
         const S=seamPoly(sh); if(S) h+=`<path class="${C('seam')}" d="${polyD(S)}" stroke-width="${px}" stroke-dasharray="${6*px} ${4*px}"/>`;
+        if(!exp&&hasSafety(sh)){const F=safetyPoly(sh);if(F)h+=`<path class="safety" d="${polyD(F)}" stroke-width="${1.2*px}" stroke-dasharray="${2*px} ${2.5*px}"/>`}
         h+=hemLines(sh,px,C);
       }
       const cls=sh.piece?'piece':('cons'+(sh.closed?' closed':''));
@@ -954,7 +1016,7 @@ function shapesSVG(px,exp){
     } else if(sh.type==='mark'){ h+=markSVG(sh,px,exp,on);
     } else if(sh.type==='point'){ const r=exp?.15:3.2*px; const m=`<path class="${C('ptm')}" d="M${sh.x-r*1.7} ${sh.y}h${r*3.4}M${sh.x} ${sh.y-r*1.7}v${r*3.4}" stroke-width="${px*1.2}"/><circle class="${C('ptc')}" cx="${sh.x}" cy="${sh.y}" r="${r*.55}"/>`;
       h+=exp?m:`<g data-id="${sh.id}" class="${on?'sel':''}"><circle class="hitf" cx="${sh.x}" cy="${sh.y}" r="${9*px}"/>${m}</g>`;
-    } else if(sh.type==='text'){ h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}">${esc(sh.text)}</text>`; }
+    } else if(sh.type==='text'){ if(!exp&&textEd&&textEd.id===sh.id) continue; h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}">${esc(sh.text)}</text>`; }
   }
   return h;
 }
@@ -985,14 +1047,14 @@ function grainFields(s){
   const g=norm360(s.grainA??90), std=GRAIN_DIRS.some(([v])=>v===g)&&!s.grainCustom;
   return `<div class="row"><span>Sentido do fio:</span><span class="grainrow">
     <button type="button" class="gbtn${s.grainHide?'':' on'}" data-act="grainEye" title="${s.grainHide?'Mostrar':'Esconder'} o fio" aria-label="Mostrar ou esconder o fio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>${s.grainHide?'<path d="M4 20L20 4"/>':''}</svg></button>
-    <button type="button" class="gbtn${s.grainBoth!==false?' on':''}" data-act="grainBoth" title="Seta de duas pontas" aria-label="Seta de duas pontas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h15l-3-3M20 15H5l3 3"/></svg></button>
+    <button type="button" class="gbtn${!!s.grainBoth?' on':''}" data-act="grainBoth" title="Seta de duas pontas" aria-label="Seta de duas pontas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h15l-3-3M20 15H5l3 3"/></svg></button>
     <span class="u"><select id="p-grainSel" data-k="grainSel">${GRAIN_DIRS.map(([v,l])=>`<option value="${v}"${std&&g===v?' selected':''}>${l}</option>`).join('')}<option value="outro"${std?'':' selected'}>OUTRO</option></select></span></span></div>
     ${std?'':rowI('Ângulo do fio:',`<input type="number" id="p-grainA" data-k="grainA" value="${g}" step="1">`,'°')}`;
 }
 function decor(sh,px,C){
   let h=''; const fs=+sh.labelSize||1.4, G=grainGeom(sh), {cx,cy,ux,uy,x1,y1,x2,y2,ah}=G;
   const head=(x,y,vx,vy)=>`M${x-vx*ah-vy*ah*.45} ${y-vy*ah+vx*ah*.45}L${x} ${y}L${x-vx*ah+vy*ah*.45} ${y-vy*ah-vx*ah*.45}`;
-  if(!sh.grainHide) h+=`<path class="${C('grain')}" d="M${x1} ${y1}L${x2} ${y2}${head(x2,y2,ux,uy)}${sh.grainBoth!==false?head(x1,y1,-ux,-uy):''}" stroke-width="${px*1.1}"/>`;
+  if(!sh.grainHide) h+=`<path class="${C('grain')}" d="M${x1} ${y1}L${x2} ${y2}${head(x2,y2,ux,uy)}${!!sh.grainBoth?head(x1,y1,-ux,-uy):''}" stroke-width="${px*1.1}"/>`;
   const vert=Math.abs(uy)>.5, tx=vert?cx+fs*.6:cx, ty=vert?cy-fs*.6:cy-fs*1.1, an=vert?'start':'middle';
   let yy=ty; for(const L of pieceLines(sh)){h+=`<text class="${C('lbl')}" x="${tx}" y="${yy}" font-size="${fs*L.k}" text-anchor="${an}"${L.b?' font-weight="700"':''}>${esc(L.t)}</text>`;yy+=fs*Math.max(L.k,.72)*1.2}
   const fe=sh.fold?foldEdge(sh):null;
@@ -1046,6 +1108,20 @@ function renderOverlay(vw,vh){
     const hs=11*px*T();for(const [k,x,y] of [['nw',x0,y0],['n',xm,y0],['ne',x1,y0],['e',x1,ym],['se',x1,y1],['s',xm,y1],['sw',x0,y1],['w',x0,ym]])h+=`<rect class="rzh" data-rz="${k}" x="${x-hs}" y="${y-hs}" width="${2*hs}" height="${2*hs}"/>`;
     if(drag&&drag.kind==='resize')h+=olabel(xm,y0-12*px,`${fmt(u.w)} × ${fmt(u.h)} cm`,px)}}
   // tool-specific vertex handles
+  if(tool==='safety'){
+    for(const sh of doc.shapes) if(sh.type==='path'&&sh.piece&&sh.closed&&!sh.hidden){const C=cutPoly(sh);if(C)h+=`<path class="safehl" d="${polyD(C)}" stroke-width="${2.4*px}" opacity=".55"/>`}
+    const hv=pick.safePrev,sh=hv&&byId(hv.id);
+    if(sh){const C=cutPoly(sh),n=C.length;let d='';for(let j=0;j<n;j++)if(C[j].seg===hv.i){const q=C[(j+1)%n];d+=`M${C[j].x} ${C[j].y}L${q.x} ${q.y}`}
+      const P=sh.pts.map(p=>({...p})),on=+P[hv.i].sm>0&&Math.abs(+P[hv.i].sm-(+opt.safeD||0))<1e-6; P[hv.i].sm=on?0:(+opt.safeD||0);
+      const F=safetyPoly(sh,P);let e='';if(F){const m=F.length;for(let j=0;j<m;j++)if(F[j].seg===hv.i){const q=F[(j+1)%m];e+=`M${F[j].x} ${F[j].y}L${q.x} ${q.y}`}}
+      h+=`<path class="safehl" d="${d}" stroke-width="${5*px}"/>`+(e?`<path class="safehl" d="${e}" stroke-width="${2*px}" stroke-dasharray="${4*px} ${3*px}"/>`:'');
+      const m=bez(segCtrl(sh.pts,hv.i,true),.5);h+=olabel(m.x,m.y-12*px,on?'Clique para remover':`Segurança ${fmt(+opt.safeD||0,2)} cm`,px)}
+  }
+  if(tool==='group'){
+    for(const [,M] of groupsList()){const b=unionBox(M.map(s=>boxOf(cutPoly(s)||sample(s))));if(b)h+=`<rect class="selbox" x="${b.x-.6}" y="${b.y-.6}" width="${b.w+1.2}" height="${b.h+1.2}" stroke-width="${px}" stroke-dasharray="${6*px} ${3*px}"/>`}
+    if(!hidePts) for(const sh of doc.shapes) if(sh.type==='path'&&sh.piece&&sh.closed&&!sh.hidden) h+=handles(sh,px,i=>pick.ga&&pick.ga.id===sh.id&&pick.ga.i===i?'on':'',true);
+    if(pick.ga){const s=byId(pick.ga.id),q=s&&s.pts[pick.ga.i];if(q)h+=olabel(q.x,q.y-12*px,'Início',px)}
+  }
   if(['align','grade','gradeCopy'].includes(tool)&&!hidePts){
     for(const sh of doc.shapes) if(sh.type==='path') h+=handles(sh,px,i=>{
       if(tool==='align') return (pick.align||[]).some(a=>a.id===sh.id&&a.i===i)?'pick':'';
@@ -1119,7 +1195,7 @@ const oSel=(k,opts)=>`<select id="o-${k}" data-opt="${k}">${opts.map(([v,l])=>`<
 const oChk=(k,label)=>`<label class="chk"><input type="checkbox" id="o-${k}" data-opt="${k}"${opt[k]?' checked':''}> ${label}</label>`;
 const btn=(act,label,cls='',dis=false,extra='')=>`<button class="btn ${cls}" data-act="${act}"${dis?' disabled':''} ${extra}>${label}</button>`;
 const hint=t=>`<p class="hint">${t}</p>`;
-const sizeOpts=[.6,.8,1,1.2,1.4,1.6,2,2.5,3,4].map(v=>[v,fmt(v,1)+' cm']);
+const sizeOpts=[.2,.3,.4,.5,.6,.7,.8,.9,1,1.2,1.4,1.6,1.8,2,2.5,3,3.5,4,4.5,5,6,7,8,9,10].map(v=>[v,fmt(v,v%1?1:0)+' cm']);
 const sec=(title,body)=>`<section class="sec"><h3>${title}</h3>${body}</section>`;
 
 function renderPanel(){
@@ -1147,13 +1223,13 @@ function setUI(p){uiPref=p;try{localStorage.setItem('atelie-ui',p)}catch(e){}app
 let lastLandscape=innerWidth>innerHeight;
 addEventListener('resize',()=>{if(uiPref==='auto')applyUI();const ls=innerWidth>innerHeight;if(ls!==lastLandscape){lastLandscape=ls;if(mobile)requestAnimationFrame(fit)}});
 const MORE=[['zin','Mais zoom','zin'],['zout','Menos zoom','zout'],['fitv','Ajustar à tela','fit'],['z100','Tamanho real','measures'],
-  ['snap','Ímã','snap'],['guides','Guias','guides'],['measures','Mostrar medidas','measures'],['hidePts','Esconder pontos','hidePts'],
+  ['snap','Ímã','snap'],['guides','Guias','guides'],['grid','Grade','grid'],['measures','Mostrar medidas','measures'],['hidePts','Esconder pontos','hidePts'],
   ['smooth','Suavizar curvas','smooth'],['rotate','Rotacionar','rotate'],['flipV','Inverter na vertical','flipV'],
   ['flipH','Inverter na horizontal','flipH'],['arrange','Reorganizar painéis','arrange'],['lock','Travar','lock'],['photo','Fotografar moldes','photo'],
   ['print','Imprimir','print'],['export','Exportar','menu'],['newMolde','Novo molde','rect'],['theme','Tema','palette'],['uiMode','Modo computador','monitor'],['help','Ajuda','select']];
 function toolPanel(t){
   switch(t){
-  case 'text': return sec('Texto',rowI('Tamanho:',oSel('textSize',sizeOpts))+hint('Clique na tela onde o texto deve ficar.'));
+  case 'text': return sec('Texto',rowI('Tamanho:',oSel('textSize',sizeOpts))+hint('Clique em qualquer lugar e digite. <b>Enter</b> ou clicar fora confirma; <b>Esc</b> cancela. Clique num texto existente para editá-lo.')+hint('Para mover um texto, use <b>Selecionar</b>. Duplo clique no texto volta para esta ferramenta, já editando.'));
   case 'perim': { const p=pick.perim; return sec('Redefinir perímetro',
       rowI('Comprimento:',oNum('perimLen',.01,0),'cm')+
       `<div class="radios">${[['bi','Bidirecional'],['keep','Manter extremos'],['uni','Unidirecional']].map(([v,l])=>`<label class="chk"><input type="radio" name="pm" data-opt="perimMode" value="${v}"${opt.perimMode===v?' checked':''}> ${l}</label>`).join('')}</div>`+
@@ -1180,6 +1256,18 @@ function toolPanel(t){
       (()=>{const sp=pick.seamPiece&&byId(pick.seamPiece);return `<div class="acts" style="display:grid">${btn('seamAll','Aplicar costura em todo o painel','primary',!sp)}${btn('seamRemove','Remover somente a costura','primary',!sp)}${btn('seamDotted',sp&&sp.dotted?'Remover pontilhado do painel':'Aplicar pontilhado ao painel','primary',!sp)}</div>`+
         hint(sp?`Painel: <b>${esc(sp.name||'Molde')}</b>.`:'Os botões acima agem no painel escolhido: clique numa linha ou dentro de um molde.')})()+
       hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>dentro</b> do molde a margem vai para dentro; <b>fora</b>, vai para fora. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.'));
+  case 'safety': { const n=doc.shapes.filter(s=>s.type==='path'&&s.piece&&hasSafety(s)).length;
+    return sec('Margem de segurança',rowI('Distância:',oNum('safeD',.05,0),'cm')+
+      `<div class="acts" style="display:grid">${btn('safeAll','Aplicar em todos os moldes','primary')}${btn('safeNone','Remover de todos os moldes','primary',!n)}</div>`+
+      hint('Espaço livre em volta da linha de corte, para cortar um molde sem estragar o vizinho no encaixe. Clique nas linhas que precisam dela; clique de novo para tirar.')+
+      hint('Costuma ir nas curvas, que são mais difíceis de cortar. De 0,3 a 0,5 cm costuma bastar, conforme a lâmina. Vale para todos os tamanhos da gradação.')+
+      (n?hint(`<b>${n}</b> molde${n>1?'s':''} com margem de segurança.`):'')); }
+  case 'group': { const G=groupsList(), a=pick.ga&&byId(pick.ga.id);
+    return sec('Agrupar moldes',hint(a?`Início: <b>${esc(a.name||'Molde')}</b>, ponto ${pick.ga.i+1}. Agora clique no ponto do <b>segundo molde</b>.`:
+        'Clique num ponto do contorno do <b>primeiro molde</b> (início da junção) e depois no ponto do <b>segundo molde</b> onde ela termina.')+
+      hint('O segundo molde gira e encosta no primeiro pela linha de corte, e os dois passam a andar juntos. Bom para tecido par ou tubular: juntar frente e costas diminui o perímetro de corte.')+
+      (a?btn('groupCancel','Escolher outro início','block'):'')+
+      (G.length?`<div class="glist">${G.map(([g,M])=>`<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><span>${M.map(s=>esc(s.name||'Molde')).join(' + ')}</span>${btn('ungroupG','Desagrupar','',false,`data-g="${g}"`)}</div>`).join('')}</div>`:'')); }
   case 'hem': return sec('Bainha',rowI('Largura:',oNum('hemW',.1,0),'cm')+rowI('Dobras:',oNum('hemN',1,1))+oChk('hemPq','Piques nas dobras')+hint('Clique na linha da barra. A margem dessa linha vira largura × dobras.'));
   case 'notch': return sec('Piques',rowI('Ícone Contorno:',oSel('nIcon',[['traco','Traço'],['v','V'],['t','T']]))+rowI('Altura:',oNum('nH',1,1),'mm')+
       rowI('Ícone Interno:',oSel('mIcon',[['cruz','Cruz'],['circulo','Círculo'],['ponto','Ponto']]))+rowI('Tamanho:',oNum('mSize',1,1),'mm')+
@@ -1312,7 +1400,7 @@ function panelPath(s){
    sec('Encolhimento',`<p class="hint">Aumenta o molde na impressão e na exportação para compensar o encolhimento do tecido.</p>`+
      two(`<label class="chk"><input type="checkbox" id="p-encHOn" data-k="encHOn"${s.encHOn?' checked':''}> ↔ ${u(`<input type="number" id="p-encH" data-k="encH" value="${s.encH||0}" step="0.5" style="width:48px">`,'%')}</label>`,
          `<label class="chk"><input type="checkbox" id="p-encVOn" data-k="encVOn"${s.encVOn?' checked':''}> ↕ ${u(`<input type="number" id="p-encV" data-k="encV" value="${s.encV||0}" step="0.5" style="width:48px">`,'%')}</label>`))+
-   pt+sec('Ações',`<div class="acts">${foldEdge(s)?btn('unfoldSel','Desdobrar'):''}${btn('dup','Duplicar')}${btn('toCons','Voltar a construção')}${btn('del','Remover','danger')}</div>`);
+   pt+sec('Ações',(groupOf(s.id).length>1?hint('Agrupado com: '+groupOf(s.id).filter(i=>i!==s.id).map(i=>`<b>${esc(byId(i).name||'Molde')}</b>`).join(', ')):'')+`<div class="acts">${groupOf(s.id).length>1?btn('ungroup','Desagrupar'):''}${foldEdge(s)?btn('unfoldSel','Desdobrar'):''}${btn('dup','Duplicar')}${btn('toCons','Voltar a construção')}${btn('del','Remover','danger')}</div>`);
 }
 function panelImage(s){return sec('Imagem de fundo',`${rowI('Largura:',`<input type="number" id="i-w" data-k="w" value="${r3(s.w)}" step="0.5" min="0.5">`,'cm')}${rowI('Opacidade:',`<input type="number" id="i-op" data-k="opacity" value="${s.opacity??.6}" min="0.1" max="1" step="0.1">`)}
   <div class="acts">${btn('digOpen','Calibrar e contornar','primary')}${btn('del','Remover','danger')}</div>`+hint('Imagens travadas não podem ser clicadas. Destrave pela lista de imagens, com nada selecionado.'))}
@@ -1321,7 +1409,9 @@ function panelSmall(s){const n={point:'Ponto',notch:'Pique',mark:'Marcação int
   return sec(n,`${s.type==='notch'?rowI('Ícone:',`<select id="s-icon" data-k="icon">${[['traco','Traço'],['v','V'],['t','T']].map(([v,l])=>`<option value="${v}"${s.icon===v?' selected':''}>${l}</option>`).join('')}</select>`)+rowI('Altura:',`<input type="number" id="s-h" data-k="h" value="${s.h||6}" step="1" min="1">`,'mm'):''}
   ${s.type==='mark'?rowI('Ícone:',`<select id="s-icon" data-k="icon">${[['cruz','Cruz'],['circulo','Círculo'],['ponto','Ponto']].map(([v,l])=>`<option value="${v}"${s.icon===v?' selected':''}>${l}</option>`).join('')}</select>`)+rowI('Tamanho:',`<input type="number" id="s-sz" data-k="size" value="${s.size||10}" step="1" min="1">`,'mm'):''}
   <div class="acts">${btn('del','Remover','danger')}</div>`)}
-function panelMulti(ss){return sec(`${ss.length} elementos`,hint('Use a barra de cima para girar, inverter, redimensionar, travar ou remover.')+`<div class="acts">${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)}
+function panelMulti(ss){const g=ss[0].grp,grouped=g&&ss.every(s=>s.grp===g);
+  if(grouped) return sec('Moldes agrupados',hint(ss.map(s=>`<b>${esc(s.name||'Molde')}</b>`).join(' + ')+'. Eles se movem, giram e invertem juntos. Clique de novo num deles para editar só ele.')+`<div class="acts">${btn('ungroup','Desagrupar','primary')}${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`);
+  return sec(`${ss.length} elementos`,hint('Use a barra de cima para girar, inverter, redimensionar, travar ou remover.')+`<div class="acts">${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)}
 
 function bindPanel(root){
   root.querySelectorAll('[data-opt]').forEach(el=>{const k=el.dataset.opt;
@@ -1331,6 +1421,7 @@ function bindPanel(root){
       if(el.tagName==='SELECT'){const f=parseFloat(v);opt[k]=isFinite(f)&&String(f)===String(v)?f:v}
       else{if(typeof opt[k]==='number'&&v!==''&&!isFinite(v))return;opt[k]=v}
       saveOpt();
+      if(k==='textSize'&&textEd){textEd.size=+opt.textSize;placeTextEditor()}
       if(['tapeBase','tbBase','tapePin','tbPin','genGrain'].includes(k)){renderPanel();render()}});});
   root.querySelectorAll('[data-meta]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.meta;let v=el.type==='number'?parseFloat(el.value):el.value;if(el.type==='number'&&!(v>0))return;doc.meta[k]=v;if(k==='nome')$('#docTitle').value=v;render();scheduleSave()}));
   root.querySelectorAll('[data-k]').forEach(el=>{
@@ -1380,7 +1471,7 @@ function updateButtons(){
   ['rotate','flipV','flipH','lock','del'].forEach(k=>set(k,!has));
   set('resize',false,resizeMode); const rr=$('#rail-resize'); if(rr) rr.classList.toggle('on',resizeMode);
   set('smooth',!(has||selPoint));
-  set('snap',null,snapOn);set('guides',null,guidesOn);set('measures',null,measuresOn);set('hidePts',null,hidePts);
+  set('snap',null,snapOn);set('guides',null,guidesOn);set('grid',null,gridOn);set('measures',null,measuresOn);set('hidePts',null,hidePts);
   set('lock',null,has&&selShapes().every(s=>s.locked));
   const t=$('#tb-theme'); if(t&&!t.dataset.ok){t.innerHTML=ic('palette');t.title='Tema';t.dataset.ok='1'}
   document.querySelectorAll('#rail .tb[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===tool||(tool==='calibrate'&&b.dataset.tool==='digitize')));
@@ -1393,6 +1484,7 @@ function setTheme(k){const r=document.documentElement;if(k==='auto')delete r.dat
 
 /* ---------- tools ---------- */
 function setTool(t){
+  if(textEd) closeTextEditor(true);
   if(t==='digitize'){ pick={}; tool='calibrate'; const im=selShapes().find(s=>s.type==='image')||doc.shapes.find(s=>s.type==='image'); if(im) pick.digit=im.id; else {$('#digFile').click()} }
   else if(t==='table'){ tool='table'; pick={}; }
   else { tool=t; pick={}; }
@@ -1442,6 +1534,43 @@ function joinLoop(chain){
   doc.shapes=doc.shapes.filter(s=>!ids.has(s.id)); doc.shapes.push(sh); return sh;
 }
 function constrain(a,w){const L0=dist(a,w),st=Math.PI/4,ang=Math.round(Math.atan2(w.y-a.y,w.x-a.x)/st)*st;const L=snapOn?Math.round(L0*10)/10:L0;return{x:r3(a.x+Math.cos(ang)*L),y:r3(a.y+Math.sin(ang)*L)}}
+/* ---------- text tool: type straight on the canvas ---------- */
+let textEd=null; // {id|null, x, y, size, el, t0}
+function openTextEditor(o){
+  closeTextEditor(true);
+  const inp=document.createElement('input'); inp.className='texted'; inp.value=o.text||''; inp.setAttribute('aria-label','Texto'); inp.autocomplete='off';
+  stage.appendChild(inp); textEd={id:o.id||null,x:o.x,y:o.y,size:+(o.size||opt.textSize)||1.4,el:inp,t0:performance.now()};
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();closeTextEditor(true)}else if(e.key==='Escape'){e.preventDefault();closeTextEditor(false)}});
+  inp.addEventListener('input',placeTextEditor);
+  inp.addEventListener('pointerdown',e=>e.stopPropagation());
+  // a touch tap ends with compatibility mouse events that steal focus right after opening: refocus once
+  inp.addEventListener('blur',()=>setTimeout(()=>{if(!textEd||textEd.el!==inp)return;if(performance.now()-textEd.t0<700)inp.focus();else closeTextEditor(true)},0));
+  render(); setTimeout(()=>{inp.focus();inp.select()},0);
+}
+function placeTextEditor(){
+  if(!textEd) return; const r=svg.getBoundingClientRect(),sr=stage.getBoundingClientRect(),fs=Math.max(12,textEd.size*view.scale),el=textEd.el;
+  const x=r.left-sr.left+(textEd.x-view.x)*view.scale, y=r.top-sr.top+(textEd.y-view.y)*view.scale;
+  el.style.setProperty('font-size',fs+'px','important'); el.style.left=(x-4)+'px'; el.style.top=(y-fs*1.08)+'px'; el.style.height=(fs*1.4)+'px';
+  el.style.width=Math.max(90,(el.value.length+2)*fs*.62)+'px';
+}
+function closeTextEditor(commit){
+  if(!textEd) return; const t=textEd; textEd=null; const v=t.el.value.trim(); t.el.remove();
+  if(commit){ if(t.id){const sh=byId(t.id);if(sh)mutate(()=>{if(v){sh.text=v;sh.size=t.size}else doc.shapes=doc.shapes.filter(s=>s.id!==t.id)})}
+    else if(v) mutate(()=>doc.shapes.push({id:uid(),type:'text',x:r3(t.x),y:r3(t.y),text:v,size:t.size})); }
+  render();
+}
+/* ---------- discreet scrollbars when the drawing does not fit the view ---------- */
+let sbState=null;
+function updateScrollbars(vw,vh){
+  const bH=$('#sbH'),bV=$('#sbV'); if(!bH) return;
+  const E=unionBox([{x:0,y:0,w:doc.meta.largura,h:doc.meta.altura},...doc.shapes.filter(s=>!s.hidden).map(shapeBox)]),pad=2;
+  const ex0=E.x-pad,ex1=E.x+E.w+pad,ey0=E.y-pad,ey1=E.y+E.h+pad;
+  const S={ux0:Math.min(ex0,view.x),ux1:Math.max(ex1,view.x+vw),uy0:Math.min(ey0,view.y),uy1:Math.max(ey1,view.y+vh)}; sbState=S;
+  const showH=view.x>ex0+1e-6||view.x+vw<ex1-1e-6, showV=view.y>ey0+1e-6||view.y+vh<ey1-1e-6;
+  bH.hidden=!showH; bV.hidden=!showV;
+  if(showH){const tr=bH.clientWidth,sz=Math.max(28,vw/(S.ux1-S.ux0)*tr),pos=(view.x-S.ux0)/(S.ux1-S.ux0)*tr;Object.assign(bH.firstElementChild.style,{width:sz+'px',left:clamp(pos,0,tr-sz)+'px'})}
+  if(showV){const tr=bV.clientHeight,sz=Math.max(28,vh/(S.uy1-S.uy0)*tr),pos=(view.y-S.uy0)/(S.uy1-S.uy0)*tr;Object.assign(bV.firstElementChild.style,{height:sz+'px',top:clamp(pos,0,tr-sz)+'px'})}
+}
 function addBox(a,b){
   const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y); if(w<.2||h<.2) return;
   let pts; if(tool==='ellipse'){pts=[];for(let k=0;k<12;k++){const t=k/12*Math.PI*2;pts.push({x:r3(x+w/2+Math.cos(t)*w/2),y:r3(y+h/2+Math.sin(t)*h/2),s:true})}}
@@ -1469,6 +1598,21 @@ function clickNotch(w){
   if(pc){const p=snap(w);mutate(()=>doc.shapes.push({id:uid(),type:'mark',x:p.x,y:p.y,parent:pc.id,icon:opt.mIcon,size:+opt.mSize||10}));return}
   toast('Clique no contorno ou dentro de um molde');
 }
+// safety tool: nearest edge of a piece's cut line (or of its outline)
+function safetyHover(w){let best=null;
+  for(const sh of doc.shapes){if(sh.type!=='path'||!sh.piece||!sh.closed||sh.hidden)continue;const C=cutPoly(sh);if(!C)continue;
+    for(let k=0;k<C.length;k++){const d=segDist(w,C[k],C[(k+1)%C.length]);if(!best||d<best.d)best={id:sh.id,i:C[k].seg,d}}}
+  if(best&&best.d*view.scale<=14*T()) return best;
+  const s=nearestSeg(w,14,x=>x.closed&&x.piece); return s?{id:s.sh.id,i:s.i}:null}
+function clickSafety(w){const h=safetyHover(w);if(!h)return toast('Clique numa linha de um molde');const sh=byId(h.id);if(sh.locked)return toast('Molde travado');
+  const v=+opt.safeD||0,p=sh.pts[h.i],on=+p.sm>0&&Math.abs(+p.sm-v)<1e-6;
+  mutate(()=>{if(on||!v)delete p.sm;else p.sm=v});toast(on||!v?'Margem de segurança removida da linha':`Margem de segurança de ${fmt(v,2)} cm`)}
+function clickGroup(w){
+  const v=nearestVertex(w,14,s=>s.piece&&s.closed&&!s.hidden);
+  if(!v){toast('Clique num ponto do contorno de um molde');return}
+  if(!pick.ga||pick.ga.id===v.sh.id){pick.ga={id:v.sh.id,i:v.i};renderPanel();toast('Agora clique no ponto do segundo molde');return}
+  const A=byId(pick.ga.id),B=v.sh; if(B.locked)return toast('O segundo molde está travado');
+  mutate(()=>joinPieces(A,pick.ga.i,B,v.i)); pick={}; renderPanel(); toast(`Moldes agrupados: ${A.name||'Molde'} + ${B.name||'Molde'}`)}
 // seam tool: the side (inside/outside the piece) follows the cursor
 function seamHover(w){const s=nearestSeg(w,14,x=>x.closed&&x.piece);return s?{id:s.sh.id,i:s.i,side:inPoly(w,sample(s.sh))?-1:1}:null}
 function clickSeam(w){
@@ -1494,7 +1638,7 @@ function unfoldAt(sh,k){
     if(p.g){o.g={};for(const key in p.g){const v=vecR(+p.g[key].x||0,+p.g[key].y||0);o.g[key]={x:r3(v.x),y:r3(v.y)}}} return o});
   const out=S.map(p=>clone(p));
   const last=out[out.length-1],prev=S[S.length-2]; delete last.e;delete last.e2;delete last.hem; if(prev&&prev.e!=null)last.e=prev.e; if(prev&&prev.hem)last.hem=clone(prev.hem);
-  sh.pts=out.concat(M.slice(1,-1)); sh.fold=false;
+  sh.pts=out.concat(M.slice(1,-1)); sh.fold=false; sh.pts.forEach(p=>delete p.fe);
   const kids=doc.shapes.filter(c=>c.parent===sh.id&&(c.type==='notch'||c.type==='mark'));
   kids.forEach(c=>{const q=R(c);const m={...clone(c),id:uid(),x:r3(q.x),y:r3(q.y)};if(c.type==='notch'){const q2=R({x:c.x+Math.cos(c.a),y:c.y+Math.sin(c.a)});m.a=Math.atan2(q2.y-q.y,q2.x-q.x)}
     if(Math.hypot(m.x-c.x,m.y-c.y)>.05)doc.shapes.push(m)});
@@ -1513,7 +1657,7 @@ function foldPiece(sh){
   const mean=c=>c.slice(1,-1).reduce((a,p)=>a+p.x,0)/Math.max(1,c.length-2);
   const ch=(c1.length>2&&mean(c1)<cx)||c2.length<=2?c1:c2;
   sh.pts=ch.map(p=>clone(p)); sh.pts[0].s=false; sh.pts[0].x=cx; const L=sh.pts[sh.pts.length-1]; L.s=false; L.x=cx; delete L.e;delete L.e2;delete L.hem;
-  sh.fold=true;
+  sh.fold=true; sh.pts.forEach(p=>delete p.fe); L.fe=1;
   doc.shapes=doc.shapes.filter(c=>!(c.parent===sh.id&&(c.type==='notch'||c.type==='mark')&&c.x>cx+.05));
   return true;
 }
@@ -1720,8 +1864,11 @@ function redefine(sh,i,target,mode){
 function arrange(){
   const pieces=doc.shapes.filter(s=>s.type==='path'&&s.closed&&s.piece); if(!pieces.length) return toast('Não há moldes para reorganizar');
   mutate(()=>{const gap=2,W=doc.meta.largura;
-    const items=pieces.map(s=>{const boxes=[boxOf(seamPoly(s)||sample(s))];for(const sz of doc.sizes)if(!sz.base&&hasGrade(s))boxes.push(boxOf(sample({...s,pts:gradedPts(s,sz)})));return{s,b:unionBox(boxes)}}).sort((a,b)=>b.b.h-a.b.h);
-    let x=gap,y=gap,rowH=0;for(const it of items){if(x+it.b.w>W-gap&&x>gap){x=gap;y+=rowH+gap;rowH=0}translate(new Set([it.s.id]),{x:x-it.b.x,y:y-it.b.y});x+=it.b.w+gap;rowH=Math.max(rowH,it.b.h)}
+    const pbox=s=>{const boxes=[boxOf(safetyPoly(s)||cutPoly(s)||sample(s))];for(const sz of doc.sizes)if(!sz.base&&hasGrade(s))boxes.push(boxOf(sample({...s,pts:gradedPts(s,sz)})));return unionBox(boxes)};
+    const seen=new Set(),items=[];
+    for(const s of pieces){if(seen.has(s.id))continue;const ids=groupOf(s.id).filter(i=>{const x=byId(i);return x&&x.piece&&x.closed});ids.forEach(i=>seen.add(i));items.push({ids:new Set(ids),b:unionBox(ids.map(i=>pbox(byId(i))))})}
+    items.sort((a,b)=>b.b.h-a.b.h);
+    let x=gap,y=gap,rowH=0;for(const it of items){if(x+it.b.w>W-gap&&x>gap){x=gap;y+=rowH+gap;rowH=0}translate(it.ids,{x:x-it.b.x,y:y-it.b.y});x+=it.b.w+gap;rowH=Math.max(rowH,it.b.h)}
     const need=Math.ceil((y+rowH+gap)/10)*10;if(need>doc.meta.altura)doc.meta.altura=need;});
   fit(); toast('Moldes reorganizados na área de impressão');
 }
@@ -1757,7 +1904,7 @@ const ACT={
     showPop(b&&b.offsetParent?b:(mobile?$('#moreBtn'):$('#tb-theme')),`<b>Tema</b><div class="themes">${THEMES.map(([k,l,c1,c2])=>`<button type="button" class="themeopt${cur===k?' on':''}" data-th="${k}"><span class="sw2" style="background:linear-gradient(135deg,${c1} 50%,${c2} 50%)"></span>${l}</button>`).join('')}</div>`,
       p=>p.querySelectorAll('[data-th]').forEach(x=>x.onclick=()=>{setTheme(x.dataset.th);hidePop()}))},
   panelToggle(){app.classList.toggle('panel-open');updateChip()},
-  more(){const needSel=['rotate','flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,measures:measuresOn,hidePts,resize:resizeMode};
+  more(){const needSel=['rotate','flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,grid:gridOn,measures:measuresOn,hidePts,resize:resizeMode};
     $('#moreGrid').innerHTML=MORE.map(([a,l,i])=>`<button data-m="${a}"${(needSel.includes(a)&&!sel.size)||(a==='smooth'&&!sel.size&&!selPoint)?' disabled':''} class="${on[a]?'on':''}">${ic(i)}<span>${l}</span></button>`).join('');
     $('#moreGrid').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{$('#moreSheet').hidden=true;act(b.dataset.m,$('#moreBtn'))});
     $('#moreSheet').hidden=false},
@@ -1769,9 +1916,10 @@ const ACT={
     for(const s of ss){if(s.parent&&sel.has(s.parent))continue;const c=clone(s);c.id=uid();map[s.id]=c.id;if(c.name)c.name+=' (cópia)';out.push(c)}
     for(const s of doc.shapes)if(s.parent&&map[s.parent]){const c=clone(s);c.id=uid();c.parent=map[s.parent];out.push(c)}
     doc.shapes.push(...out);translate(new Set(Object.values(map)),{x:2,y:2});sel=new Set(Object.values(map));selPoint=null})},
+  grid(){gridOn=!gridOn;try{localStorage.setItem('atelie-grid',gridOn?'1':'0')}catch(e){}render();updateButtons();toast(gridOn?'Grade ligada':'Grade desligada')},
   closePath(){const sh=selShapes()[0];mutate(()=>{sh.closed=true})},
   grainEye(){const sh=selShapes()[0];if(sh)mutate(()=>{sh.grainHide=!sh.grainHide})},
-  grainBoth(){const sh=selShapes()[0];if(sh)mutate(()=>{sh.grainBoth=sh.grainBoth===false})},
+  grainBoth(){const sh=selShapes()[0];if(sh)mutate(()=>{sh.grainBoth=!sh.grainBoth})},
   joinLoop(){const s=selShapes()[0],ch=s&&findLoop(s.id);if(!ch)return;let n;mutate(()=>{n=joinLoop(ch)});sel=new Set([n.id]);selPoint=null;renderPanel();render();toast('Linhas unidas em uma forma fechada')},
   toCons(){const sh=selShapes()[0];mutate(()=>{sh.piece=false})},
   unfoldSel(){const sh=selShapes()[0],fe=foldEdge(sh);if(fe)mutate(()=>unfoldAt(sh,fe.i))},
@@ -1799,6 +1947,11 @@ const ACT={
   seamAll(){const sh=byId(pick.seamPiece);if(!sh)return;const side=pick.seamSide||1,a=+opt.seamA||0;
     mutate(()=>{sh.seam=side*a;sh.pts.forEach(p=>{if(!p.hem){delete p.e;delete p.e2}p.cf=opt.seamCf})});toast(`Margem de ${fmt(a,2)} cm ${side<0?'para dentro':'para fora'} em todo o painel`)},
   seamRemove(){const sh=byId(pick.seamPiece);if(!sh)return;mutate(()=>{sh.seam=0;sh.pts.forEach(p=>{if(!p.hem){delete p.e;delete p.e2;delete p.cf}})});toast('Margem de costura removida (bainhas mantidas)')},
+  safeAll(){const v=+opt.safeD||0;if(!v)return toast('Informe a distância');mutate(()=>doc.shapes.forEach(s=>{if(s.type==='path'&&s.piece&&!s.locked)s.pts.forEach(p=>p.sm=v)}));toast(`Margem de segurança de ${fmt(v,2)} cm em todos os moldes`)},
+  safeNone(){mutate(()=>doc.shapes.forEach(s=>{if(s.type==='path'&&!s.locked)s.pts.forEach(p=>delete p.sm)}));toast('Margem de segurança removida de todos os moldes')},
+  groupCancel(){pick={};renderPanel();render()},
+  ungroupG(b){const g=b.dataset.g;mutate(()=>doc.shapes.forEach(s=>{if(s.grp===g)delete s.grp}));toast('Moldes desagrupados')},
+  ungroup(){const gs=new Set(selShapes().map(s=>s.grp).filter(Boolean));mutate(()=>doc.shapes.forEach(s=>{if(gs.has(s.grp))delete s.grp}));sel=new Set([...sel].slice(0,1));renderPanel();toast('Moldes desagrupados')},
   seamDotted(){const sh=byId(pick.seamPiece);if(!sh)return;mutate(()=>{sh.dotted=!sh.dotted})},
   pieceVis(b){const s=byId(b.dataset.id);mutate(()=>{s.hidden=!s.hidden;if(s.hidden)sel.delete(s.id)})},
   pieceLock(b){const s=byId(b.dataset.id);mutate(()=>{s.locked=!s.locked})},
@@ -1852,12 +2005,15 @@ function onDown(e){
     case 'pencil': if(hEl){drag={kind:'point',id:hEl.dataset.hid,i:+hEl.dataset.h,s0:snap0(),moved:false};break}
       drag={kind:'pencil',pts:[w]}; break;
     case 'point': mutate(()=>doc.shapes.push({id:uid(),type:'point',x:p.x,y:p.y})); break;
-    case 'text': {const s={id:uid(),type:'text',x:p.x,y:p.y,text:'Texto',size:+opt.textSize||1.4};mutate(()=>doc.shapes.push(s));setTool('select');sel=new Set([s.id]);renderPanel();const i=$('#t-text');if(i){i.focus();i.select()}break}
+    case 'text': {e.preventDefault&&e.preventDefault(); if(textEd){closeTextEditor(true);break}
+      const te=sEl&&byId(sEl.dataset.id); openTextEditor(te&&te.type==='text'?te:{x:p.x,y:p.y}); break}
     case 'tape': if(e.shiftKey||e.ctrlKey||e.metaKey) clickTape(w); else tapeClick(p,w); break;
     case 'calibrate': drag={kind:'measure',a:p}; measure={a:p,b:p}; break;
     case 'extend': clickExtend(w); break;
     case 'notch': clickNotch(w); break;
     case 'seam': clickSeam(w); break;
+    case 'safety': clickSafety(w); break;
+    case 'group': clickGroup(w); break;
     case 'hem': clickHem(w); break;
     case 'unfold': clickUnfold(w); break;
     case 'fold': clickFold(w); break;
@@ -1873,12 +2029,13 @@ function onDown(e){
   }
   render(); updateLoupe(e);
 }
-const AIM=new Set(['point','text','notch','seam','hem','unfold','fold','dart','align','parallel','check','perim','generate','grade','gradeAuto','gradeCopy','tape','curve']);
+const AIM=new Set(['point','text','notch','seam','safety','group','hem','unfold','fold','dart','align','parallel','check','perim','generate','grade','gradeAuto','gradeCopy','tape','curve']);
 const LOUPE_KINDS=new Set(['aim','point','move','line','box','pencil','extend','resize','measure']);
 let touchDown=false;
 function aimHover(w){
   if(tool==='tape') tapeHover=tapeHoverAt(w);
   if(tool==='seam') pick.seamPrev=seamHover(w);
+  if(tool==='safety') pick.safePrev=safetyHover(w);
   if(tool==='notch'){const s=nearestSeg(w,12,x=>x.closed&&x.piece);pick.nprev=s?s.q:null}
 }
 // magnified view of what is under the finger (phone mode only)
@@ -1903,10 +2060,12 @@ function downSelect(e,w,hEl,sEl){
   if(hEl){const id=hEl.dataset.hid,i=+hEl.dataset.h;selPoint={id,i};renderPanel();const sh=byId(id);if(!sh.locked)drag={kind:'point',id,i,s0:snap0(),moved:false};return}
   if(sEl){const id=sEl.dataset.id;
     if(e.shiftKey){sel.has(id)?sel.delete(id):sel.add(id);selPoint=null;renderPanel();updateButtons();return}
-    if(!sel.has(id)){sel=new Set([id]);selPoint=null;renderPanel();updateButtons()}
+    let solo=null; const grp=groupOf(id);
+    if(!sel.has(id)){sel=new Set(grp);selPoint=null;renderPanel();updateButtons()}
+    else if(grp.length>1&&sel.size===grp.length&&grp.every(i=>sel.has(i))) solo=id;
     const ids=new Set([...sel].filter(i=>{const s=byId(i);return s&&!s.locked}));
     if(ids.size){let anchor=w,bd=12/view.scale;for(const i of ids){const s=byId(i);if(s.type==='path')s.pts.forEach(q=>{const d=dist(q,w);if(d<bd){bd=d;anchor={x:q.x,y:q.y}}})}
-      drag={kind:'move',start:w,last:{x:0,y:0},anchor,ids,s0:snap0(),moved:false}}
+      drag={kind:'move',start:w,last:{x:0,y:0},anchor,ids,s0:snap0(),moved:false,solo}}
     return}
   if(!e.shiftKey){sel.clear();selPoint=null;renderPanel();updateButtons()}
   drag=e.pointerType==='touch'?{kind:'pan',cx:e.clientX,cy:e.clientY,vx:view.x,vy:view.y}:{kind:'marquee',a:w,b:w};
@@ -1961,7 +2120,7 @@ function onUp(e){
   if(d.kind==='aim'){aimFire(e);touchDown=false;$('#loupe').hidden=true;return}
   switch(d.kind){
     case 'point': if(d.moved){mergeDropped(d.id,d.i);pushUndo(d.s0);changed()}else render(); break;
-    case 'move': case 'extend': case 'resize': if(d.moved){pushUndo(d.s0);changed(d.kind!=='move')}else render(); break;
+    case 'move': case 'extend': case 'resize': if(d.moved){pushUndo(d.s0);changed(d.kind!=='move')}else{if(d.solo){sel=new Set([d.solo]);renderPanel();updateButtons()}render()} break;
     case 'box': addBox(d.a,d.b); break;
     case 'line': if(dist(d.a,d.b)*view.scale<4) temp={kind:'line1',pts:[d.a]}; else {temp={pts:[d.a]};addLine(d.b)} break;
     case 'pencil': addPencil(d.pts); break;
@@ -1983,7 +2142,7 @@ svg.addEventListener('dblclick',e=>{
   if(h){const sh=byId(h.dataset.hid),i=+h.dataset.h;if(!sh.locked)mutate(()=>{sh.pts[i].s=!sh.pts[i].s});return}
   if(tool!=='select')return;
   const s=e.target.closest('[data-id]'); if(!s) return; const sh=byId(s.dataset.id);
-  if(sh.type==='text'){const i=$('#t-text');if(i){i.focus();i.select()}return}
+  if(sh.type==='text'){setTool('text');openTextEditor(sh);return}
   if(sh.type==='path'&&!sh.locked){const w=toWorld(e),hit=nearestSeg(w,14,x=>x===sh);if(!hit||hit.t<.02||hit.t>.98)return;
     mutate(()=>{const a=sh.pts[hit.i],b=sh.pts[(hit.i+1)%sh.pts.length];const np={x:r3(hit.q.x),y:r3(hit.q.y),s:!!(a.s||b.s)};if(a.e!=null)np.e=a.e;sh.pts.splice(hit.i+1,0,np);selPoint={id:sh.id,i:hit.i+1}})}
 });
@@ -2172,7 +2331,7 @@ function drawPDF(pdf,ox,oy){
       // grain line
       const G=grainGeom(s),{cx,cy,ux,uy,ah}=G,p1={x:G.x1,y:G.y1},p2={x:G.x2,y:G.y2};
       if(!s.grainHide){pdf.setLineWidth(.02); line(p1,p2);
-        for(const [p,vx,vy] of (s.grainBoth!==false?[[p2,ux,uy],[p1,-ux,-uy]]:[[p2,ux,uy]])){line(p,{x:p.x-vx*ah-vy*ah*.45,y:p.y-vy*ah+vx*ah*.45});line(p,{x:p.x-vx*ah+vy*ah*.45,y:p.y-vy*ah-vx*ah*.45})}}
+        for(const [p,vx,vy] of (!!s.grainBoth?[[p2,ux,uy],[p1,-ux,-uy]]:[[p2,ux,uy]])){line(p,{x:p.x-vx*ah-vy*ah*.45,y:p.y-vy*ah+vx*ah*.45});line(p,{x:p.x-vx*ah+vy*ah*.45,y:p.y-vy*ah-vx*ah*.45})}}
       // labels
       const fs=+s.labelSize||1.4, vert=Math.abs(uy)>.5, tx=vert?cx+fs*.6:cx, ty=vert?cy-fs*.6:cy-fs*1.1, al=vert?'left':'center';
       let yy=ty; for(const Ln of pieceLines(s,{nome:PR.nome,textos:PR.textos,base:PR.base})){pdf.setFont('helvetica',Ln.b?'bold':'normal');pdf.setFontSize(PT(fs*Ln.k));pdf.text(String(Ln.t),X(tx),Y(yy),{align:al});yy+=fs*Math.max(Ln.k,.72)*1.2}
@@ -2252,6 +2411,15 @@ $('#top').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if
   document.addEventListener('pointerout',e=>{if(cur&&!cur.contains(e.relatedTarget))hide()});
   document.addEventListener('pointerdown',hide,true); addEventListener('blur',hide);
 })();
+// scrollbars: drag the thumb to pan, click the track to page
+for(const [id,ax] of [['sbH','x'],['sbV','y']]){const bar=$('#'+id),th=bar.firstElementChild;
+  bar.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();const S=sbState;if(!S)return;
+    const span=ax==='x'?S.ux1-S.ux0:S.uy1-S.uy0,track=ax==='x'?bar.clientWidth:bar.clientHeight,r=svg.getBoundingClientRect(),vis=(ax==='x'?r.width:r.height)/view.scale;
+    if(e.target!==th){const tr=th.getBoundingClientRect(),before=ax==='x'?e.clientX<tr.left:e.clientY<tr.top;view[ax]+=(before?-1:1)*vis*.9;render();return}
+    bar.classList.add('drag');try{bar.setPointerCapture(e.pointerId)}catch(_){}const start=ax==='x'?e.clientX:e.clientY,v0=view[ax];
+    const mv=ev=>{view[ax]=v0+((ax==='x'?ev.clientX:ev.clientY)-start)*span/track;render()};
+    const up=()=>{bar.classList.remove('drag');bar.removeEventListener('pointermove',mv);bar.removeEventListener('pointerup',up);bar.removeEventListener('pointercancel',up)};
+    bar.addEventListener('pointermove',mv);bar.addEventListener('pointerup',up);bar.addEventListener('pointercancel',up)})}
 // phone: "Opções" chip on the canvas and the sheet's grab handle open/close the options panel
 $('#tcBtn').addEventListener('click',()=>act('panelToggle'));
 document.querySelector('.panel .grab').addEventListener('click',()=>act('panelToggle'));
