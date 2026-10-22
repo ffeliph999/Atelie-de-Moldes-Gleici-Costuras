@@ -31,6 +31,19 @@
   --paper:#1b2320; --grid:rgba(120,200,180,.07); --grid-major:rgba(120,200,180,.19);
   --piece:rgba(76,187,166,.09); --construct:#8b9891; --seam:#ef7d6d; --warn:#ef7d6d; --hl:#f0b54a;
   --shadow:0 14px 44px rgba(0,0,0,.55); color-scheme:dark}
+/* extra themes: purple dark (like molde.me's dark mode) and classic Windows grey */
+:root[data-theme="roxo"]{
+  --desk:#221f2b; --chrome:#2b2735; --chrome-2:#332e3f; --ink:#ece8f4; --muted:#a59db8; --line:#3f3950;
+  --accent:#8f74dc; --accent-ink:#ffffff; --accent-soft:rgba(143,116,220,.2); --accent-line:rgba(143,116,220,.55);
+  --paper:#2e2a3a; --grid:rgba(175,155,235,.07); --grid-major:rgba(175,155,235,.17);
+  --piece:rgba(143,116,220,.12); --construct:#9c94b0; --seam:#ef8a7c; --warn:#ef8a7c; --hl:#f2b84f;
+  --shadow:0 14px 44px rgba(0,0,0,.5); color-scheme:dark}
+:root[data-theme="classico"]{
+  --desk:#a7a6a0; --chrome:#d4d0c8; --chrome-2:#c9c5bd; --ink:#000000; --muted:#3c3c3c; --line:#8c8a85;
+  --accent:#0a246a; --accent-ink:#ffffff; --accent-soft:rgba(10,36,106,.13); --accent-line:rgba(10,36,106,.55);
+  --paper:#ecebe6; --grid:rgba(0,0,0,.06); --grid-major:rgba(0,0,0,.17);
+  --piece:rgba(10,36,106,.07); --construct:#55554f; --seam:#b3261e; --warn:#b3261e; --hl:#c47a00;
+  --shadow:0 6px 18px rgba(0,0,0,.28); --font-ui:Tahoma,"Segoe UI",Verdana,Geneva,sans-serif; color-scheme:light}
 [hidden]{display:none!important}
 html{height:100%;box-sizing:border-box}
 *,*::before,*::after{box-sizing:inherit}
@@ -159,6 +172,17 @@ dl.stats dt{color:var(--muted)} dl.stats dd{margin:0;text-align:right;font-famil
 .dot{width:11px;height:11px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.15)}
 .mini{border:0;background:transparent;color:var(--muted);padding:2px 4px;border-radius:4px;font-size:12px;line-height:1}
 .mini:hover{background:var(--chrome-2);color:var(--ink)}
+.themes{display:grid;gap:4px}
+.themeopt{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--chrome-2);color:var(--ink);border-radius:7px;padding:7px 9px;text-align:left;font-size:12.5px}
+.themeopt.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.sw2{width:18px;height:18px;border-radius:4px;border:1px solid rgba(0,0,0,.25);flex:none}
+.tip{position:fixed;z-index:100;background:var(--ink);color:var(--chrome);font-size:12px;font-weight:500;line-height:1.3;padding:5px 9px;border-radius:6px;pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.grainrow{display:flex;align-items:center;gap:4px;min-width:0}
+.grainrow .u{flex:1;min-width:88px}
+.grainrow select{font-size:16px;padding-right:0}
+.gbtn{border:1px solid var(--line);background:transparent;border-radius:6px;width:28px;height:28px;padding:0;display:grid;place-items:center;color:var(--muted);flex:none}
+.gbtn.on{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.gbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .mgrid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .mcard{border:1px solid var(--line);border-radius:7px;padding:4px;display:grid;gap:2px;background:var(--chrome)}
 .mcard.off .mthumb{opacity:.35}
@@ -580,7 +604,7 @@ const pointers=new Map(); let pinch=null;
 let resizeMode=false; // top-bar "Redimensionar" toggles drag handles around the selection
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
-const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
+const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genGrainA:0,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
   seamA:1,seamB:'',seamCf:'reto',hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
   alignDir:'h',par:1,menor:true,tbBase:false,tbPin:false,tapeBase:false,tapePin:false,gcX:true,gcY:true};
 try{Object.assign(opt,JSON.parse(localStorage.getItem(OPTKEY)||'{}'))}catch(e){}
@@ -650,7 +674,8 @@ const I={
  phone:'<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>',
  monitor:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/>',
  more:'<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',
- fit:'<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>'
+ fit:'<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
+ palette:'<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.3-.7-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4c0-4.7-4-8.7-9-8.7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7.2" r="1.2"/><circle cx="14.6" cy="7.2" r="1.2"/>'
 };
 const ic=n=>`<svg viewBox="0 0 24 24" aria-hidden="true">${I[n]||''}</svg>`;
 
@@ -942,14 +967,32 @@ function hemLines(sh,px,C){
   });
   return h;
 }
+// grain line: anchored at the most interior point and sized to the space inside the piece along its direction
+function grainGeom(sh){
+  const P=sample(sh),b=boxOf(P),n=P.length; let best={x:b.x+b.w/2,y:b.y+b.h/2},bd=-1;
+  for(let i=1;i<16;i++)for(let j=1;j<16;j++){const q={x:b.x+b.w*i/16,y:b.y+b.h*j/16};if(!inPoly(q,P))continue;
+    let d=Infinity;for(let k=0;k<n;k++){const v=segDist(q,P[k],P[(k+1)%n]);if(v<d)d=v}if(d>bd){bd=d;best=q}}
+  const a=(sh.grainA??90)*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a);let tp=Infinity,tn=-Infinity;
+  for(let k=0;k<n;k++){const A=P[k],C=P[(k+1)%n],ex=C.x-A.x,ey=C.y-A.y,det=-ux*ey+uy*ex;if(Math.abs(det)<1e-12)continue;
+    const dx=A.x-best.x,dy=A.y-best.y,t=(-dx*ey+dy*ex)/det,s=(ux*dy-uy*dx)/det;if(s<0||s>1)continue;if(t>1e-6&&t<tp)tp=t;if(t<-1e-6&&t>tn)tn=t}
+  if(!isFinite(tp))tp=Math.max(b.w,b.h)/2; if(!isFinite(tn))tn=-Math.max(b.w,b.h)/2;
+  const k=.8,x1=best.x+ux*tn*k,y1=best.y+uy*tn*k,x2=best.x+ux*tp*k,y2=best.y+uy*tp*k,L=Math.hypot(x2-x1,y2-y1);
+  return {cx:best.x,cy:best.y,ux,uy,x1,y1,x2,y2,L,ah:Math.min(1,Math.max(.3,L*.12))};
+}
+const norm360=v=>((Math.round(v)%360)+360)%360;
+const GRAIN_DIRS=[[0,'→'],[45,'↘'],[90,'↓'],[135,'↙'],[180,'←'],[225,'↖'],[270,'↑'],[315,'↗']];
+function grainFields(s){
+  const g=norm360(s.grainA??90), std=GRAIN_DIRS.some(([v])=>v===g)&&!s.grainCustom;
+  return `<div class="row"><span>Sentido do fio:</span><span class="grainrow">
+    <button type="button" class="gbtn${s.grainHide?'':' on'}" data-act="grainEye" title="${s.grainHide?'Mostrar':'Esconder'} o fio" aria-label="Mostrar ou esconder o fio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>${s.grainHide?'<path d="M4 20L20 4"/>':''}</svg></button>
+    <button type="button" class="gbtn${s.grainBoth!==false?' on':''}" data-act="grainBoth" title="Seta de duas pontas" aria-label="Seta de duas pontas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h15l-3-3M20 15H5l3 3"/></svg></button>
+    <span class="u"><select id="p-grainSel" data-k="grainSel">${GRAIN_DIRS.map(([v,l])=>`<option value="${v}"${std&&g===v?' selected':''}>${l}</option>`).join('')}<option value="outro"${std?'':' selected'}>OUTRO</option></select></span></span></div>
+    ${std?'':rowI('Ângulo do fio:',`<input type="number" id="p-grainA" data-k="grainA" value="${g}" step="1">`,'°')}`;
+}
 function decor(sh,px,C){
-  const b=boxOf(sh.pts), cx=b.x+b.w/2, cy=b.y+b.h/2; let h='';
-  const fs=+sh.labelSize||1.4;
-  const a=(sh.grainA??90)*Math.PI/180, ux=Math.cos(a), uy=Math.sin(a);
-  const L=Math.max(4,.55*(Math.abs(uy)*b.h+Math.abs(ux)*b.w)), ah=Math.min(1,L*.12);
-  const x1=cx-ux*L/2,y1=cy-uy*L/2,x2=cx+ux*L/2,y2=cy+uy*L/2;
+  let h=''; const fs=+sh.labelSize||1.4, G=grainGeom(sh), {cx,cy,ux,uy,x1,y1,x2,y2,ah}=G;
   const head=(x,y,vx,vy)=>`M${x-vx*ah-vy*ah*.45} ${y-vy*ah+vx*ah*.45}L${x} ${y}L${x-vx*ah+vy*ah*.45} ${y-vy*ah-vx*ah*.45}`;
-  h+=`<path class="${C('grain')}" d="M${x1} ${y1}L${x2} ${y2}${head(x2,y2,ux,uy)}${head(x1,y1,-ux,-uy)}" stroke-width="${px*1.1}"/>`;
+  if(!sh.grainHide) h+=`<path class="${C('grain')}" d="M${x1} ${y1}L${x2} ${y2}${head(x2,y2,ux,uy)}${sh.grainBoth!==false?head(x1,y1,-ux,-uy):''}" stroke-width="${px*1.1}"/>`;
   const vert=Math.abs(uy)>.5, tx=vert?cx+fs*.6:cx, ty=vert?cy-fs*.6:cy-fs*1.1, an=vert?'start':'middle';
   let yy=ty; for(const L of pieceLines(sh)){h+=`<text class="${C('lbl')}" x="${tx}" y="${yy}" font-size="${fs*L.k}" text-anchor="${an}"${L.b?' font-weight="700"':''}>${esc(L.t)}</text>`;yy+=fs*Math.max(L.k,.72)*1.2}
   const fe=sh.fold?foldEdge(sh):null;
@@ -1107,7 +1150,7 @@ const MORE=[['zin','Mais zoom','zin'],['zout','Menos zoom','zout'],['fitv','Ajus
   ['snap','Ímã','snap'],['guides','Guias','guides'],['measures','Mostrar medidas','measures'],['hidePts','Esconder pontos','hidePts'],
   ['smooth','Suavizar curvas','smooth'],['rotate','Rotacionar','rotate'],['flipV','Inverter na vertical','flipV'],
   ['flipH','Inverter na horizontal','flipH'],['arrange','Reorganizar painéis','arrange'],['lock','Travar','lock'],['photo','Fotografar moldes','photo'],
-  ['print','Imprimir','print'],['export','Exportar','menu'],['newMolde','Novo molde','rect'],['theme','Tema claro/escuro','sun'],['uiMode','Modo computador','monitor'],['help','Ajuda','select']];
+  ['print','Imprimir','print'],['export','Exportar','menu'],['newMolde','Novo molde','rect'],['theme','Tema','palette'],['uiMode','Modo computador','monitor'],['help','Ajuda','select']];
 function toolPanel(t){
   switch(t){
   case 'text': return sec('Texto',rowI('Tamanho:',oSel('textSize',sizeOpts))+hint('Clique na tela onde o texto deve ficar.'));
@@ -1118,7 +1161,7 @@ function toolPanel(t){
   case 'generate': return sec('Gerar molde',
       rowI('Nome:',`<input id="o-genName" data-opt="genName" value="${esc(opt.genName)}" placeholder="Ex.: Frente">`)+
       rowI('Tam. do texto:',oSel('genText',sizeOpts))+
-      rowI('Sentido do fio:',oSel('genGrain',[[90,'↕ vertical'],[0,'↔ horizontal'],[45,'⤡ 45°'],[135,'⤢ 135°']]))+
+      rowI('Sentido do fio:',oSel('genGrain',GRAIN_DIRS.concat([['outro','Outro ângulo…']])))+(opt.genGrain==='outro'?rowI('Ângulo:',oNum('genGrainA',1),'°'):'')+
       rowI('Rotação Permitida:',oSel('genRot',[['livre','Livre'],['180°','180°'],['90°','90°'],['nenhuma','Nenhuma']]))+
       rowI('Quantidade:',oNum('genQtd',1,1))+oChk('genPar','Par (cortar em pares)')+oChk('genFold','Cortar na dobra')+
       btn('genApply','Gerar molde','block',!pick.region)+
@@ -1261,7 +1304,7 @@ function panelPath(s){
      ${rowI('Quantidade:',`<input type="number" id="p-qtd" data-k="qtd" value="${s.qtd||1}" min="1" step="1">`,s.par?'pares':'vezes')}
      ${rowI('Texto de corte:',`<input id="p-cut" data-k="cutText" value="${esc(s.cutText||'')}" placeholder="automático: Cortar ${s.qtd||1}x">`)}
      ${rowI('Tam. do texto:',`<select id="p-ls" data-k="labelSize">${sizeOpts.map(([v,l])=>`<option value="${v}"${+s.labelSize===v?' selected':''}>${l}</option>`).join('')}</select>`)}
-     ${rowI('Sentido do fio:',`<select id="p-grain" data-k="grainA">${[[90,'↕ vertical'],[0,'↔ horizontal'],[45,'⤡ 45°'],[135,'⤢ 135°']].concat([90,0,45,135].includes(+(s.grainA??90))?[]:[[s.grainA,fmt(s.grainA,0)+'°']]).map(([v,l])=>`<option value="${v}"${+(s.grainA??90)===+v?' selected':''}>${l}</option>`).join('')}</select>`)}
+     ${grainFields(s)}
      ${rowI('Rotação permitida:',`<select id="p-rot" data-k="rot">${[['livre','Livre'],['180°','180°'],['90°','90°'],['nenhuma','Nenhuma']].map(([v,l])=>`<option value="${v}"${s.rot===v?' selected':''}>${l}</option>`).join('')}</select>`)}
      ${ck('showRef','Nome / Referência',true)}${ck('mirror','Permitir espelhar',true)}${ck('fold','Cortar na dobra',false)}${ck('tubular','Dobra no tecido tubular',false)}${ck('par','Par',false)}${ck('showQtd','Exibir quantidade',true)}
      ${rowI('Tecido:',`<select id="p-tecido" data-k="tecido">${['Tecido 1','Tecido 2','Tecido 3','Forro','Entretela'].map(t=>`<option${(s.tecido||'Tecido 1')===t?' selected':''}>${t}</option>`).join('')}</select>`)}
@@ -1284,8 +1327,11 @@ function bindPanel(root){
   root.querySelectorAll('[data-opt]').forEach(el=>{const k=el.dataset.opt;
     const ev=(el.type==='checkbox'||el.type==='radio'||el.tagName==='SELECT')?'change':'input';
     el.addEventListener(ev,()=>{let v=el.type==='checkbox'?el.checked:el.type==='number'?(el.value===''?'':parseFloat(el.value)):el.value;
-      if(el.type==='radio'&&!el.checked)return; if(typeof opt[k]==='number'&&v!==''&&!isFinite(v))return; opt[k]=(typeof opt[k]==='number'&&el.tagName==='SELECT')?parseFloat(v):v; saveOpt();
-      if(['tapeBase','tbBase','tapePin','tbPin'].includes(k)){renderPanel();render()}});});
+      if(el.type==='radio'&&!el.checked)return;
+      if(el.tagName==='SELECT'){const f=parseFloat(v);opt[k]=isFinite(f)&&String(f)===String(v)?f:v}
+      else{if(typeof opt[k]==='number'&&v!==''&&!isFinite(v))return;opt[k]=v}
+      saveOpt();
+      if(['tapeBase','tbBase','tapePin','tbPin','genGrain'].includes(k)){renderPanel();render()}});});
   root.querySelectorAll('[data-meta]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.meta;let v=el.type==='number'?parseFloat(el.value):el.value;if(el.type==='number'&&!(v>0))return;doc.meta[k]=v;if(k==='nome')$('#docTitle').value=v;render();scheduleSave()}));
   root.querySelectorAll('[data-k]').forEach(el=>{
     const ev=(el.type==='checkbox'||el.tagName==='SELECT')?'change':'input';
@@ -1308,6 +1354,8 @@ function setField(el){
   if(el.type==='number'&&!isFinite(v)) return; const sh=selShapes()[0]; if(!sh) return;
   if(k==='bx'||k==='by'){const b=shapeBox(sh);translate(new Set([sh.id]),k==='bx'?{x:v-b.x,y:0}:{x:0,y:v-b.y});return}
   if(sh.type==='image'&&k==='w'){const r=sh.h/sh.w;sh.w=Math.max(.5,v);sh.h=sh.w*r;return}
+  if(k==='grainSel'){if(v==='outro')sh.grainCustom=true;else{sh.grainA=+v;sh.grainCustom=false}setTimeout(renderPanel);return}
+  if(k==='grainA'){sh.grainA=norm360(v);return}
   if(k==='lineLen'){if(sh.locked||!(v>0))return;const a=sh.pts[0],b=sh.pts[1],l=dist(a,b)||1;b.x=r3(a.x+(b.x-a.x)*v/l);b.y=r3(a.y+(b.y-a.y)*v/l);return}
   if(k==='bw'||k==='bh'){if(sh.locked||!(v>0))return;const b=boxOf(sh.pts);let sx=k==='bw'?(b.w?v/b.w:1):1,sy=k==='bh'?(b.h?v/b.h:1):1;if(keepRatioOf(sh)){if(k==='bw')sy=sx;else sx=sy}
     xform(new Set([sh.id]),p=>({x:b.x+(p.x-b.x)*sx,y:b.y+(p.y-b.y)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})});return}
@@ -1334,11 +1382,14 @@ function updateButtons(){
   set('smooth',!(has||selPoint));
   set('snap',null,snapOn);set('guides',null,guidesOn);set('measures',null,measuresOn);set('hidePts',null,hidePts);
   set('lock',null,has&&selShapes().every(s=>s.locked));
-  const dark=isDark(); const t=$('#tb-theme'); if(t){t.innerHTML=ic(dark?'sun':'moon');t.title=dark?'Tema claro':'Tema escuro'}
+  const t=$('#tb-theme'); if(t&&!t.dataset.ok){t.innerHTML=ic('palette');t.title='Tema';t.dataset.ok='1'}
   document.querySelectorAll('#rail .tb[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===tool||(tool==='calibrate'&&b.dataset.tool==='digitize')));
   $('#stSnap').textContent=snapOn?'ímã ligado':'ímã desligado';
 }
-function isDark(){const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
+function isDark(){const t=document.documentElement.dataset.theme;return t?(t==='dark'||t==='roxo'):matchMedia('(prefers-color-scheme: dark)').matches}
+const THEMES=[['auto','Automático (do sistema)','#f9faf7','#171c1a'],['light','Claro','#f9faf7','#0f6b5d'],['dark','Escuro','#171c1a','#4cbba6'],['roxo','Roxo escuro','#2b2735','#8f74dc'],['classico','Cinza clássico','#d4d0c8','#0a246a']];
+function setTheme(k){const r=document.documentElement;if(k==='auto')delete r.dataset.theme;else r.dataset.theme=k;
+  try{k==='auto'?localStorage.removeItem('atelie-theme'):localStorage.setItem('atelie-theme',k)}catch(e){}updateButtons();render()}
 
 /* ---------- tools ---------- */
 function setTool(t){
@@ -1362,14 +1413,14 @@ function finishPoly(closed){
   if(pts.length<(closed?3:2)){temp=null;render();return}
   if(temp.kind==='curve') pts.forEach((p,i)=>p.s=closed||(i>0&&i<pts.length-1));
   const sh={id:uid(),type:'path',pts,closed,name:''}; temp=null;
-  mutate(()=>{doc.shapes.push(sh);if(!closed)autoJoin(sh.id)}); render();
+  mutate(()=>doc.shapes.push(sh)); render();
 }
 // single straight line: start point is temp.pts[0]
 function addLine(b){
   const a=temp&&temp.pts[0]; temp=null; if(!a||dist(a,b)<.05) return;
-  const id=uid(); mutate(()=>{doc.shapes.push({id,type:'path',pts:[{x:r3(a.x),y:r3(a.y),s:false},{x:r3(b.x),y:r3(b.y),s:false}],closed:false,name:''});autoJoin(id)});
+  mutate(()=>doc.shapes.push({id:uid(),type:'path',pts:[{x:r3(a.x),y:r3(a.y),s:false},{x:r3(b.x),y:r3(b.y),s:false}],closed:false,name:''}));
 }
-/* open lines joined end to end into a closed loop become one closed shape */
+/* open lines joined end to end into a closed loop can be merged into one closed shape (panel button) */
 function findLoop(startId){
   const tol=.02,same=(a,b)=>Math.abs(a.x-b.x)<tol&&Math.abs(a.y-b.y)<tol;
   const open=doc.shapes.filter(s=>s.type==='path'&&!s.closed&&!s.piece&&!s.parent);
@@ -1390,7 +1441,6 @@ function joinLoop(chain){
   const ids=new Set(chain.map(c=>c.s.id)), sh={id:uid(),type:'path',closed:true,name:'',pts};
   doc.shapes=doc.shapes.filter(s=>!ids.has(s.id)); doc.shapes.push(sh); return sh;
 }
-function autoJoin(id){const ch=findLoop(id);if(!ch)return null;const sh=joinLoop(ch);toast('Contorno fechado: as linhas viraram uma forma só');return sh}
 function constrain(a,w){const L0=dist(a,w),st=Math.PI/4,ang=Math.round(Math.atan2(w.y-a.y,w.x-a.x)/st)*st;const L=snapOn?Math.round(L0*10)/10:L0;return{x:r3(a.x+Math.cos(ang)*L),y:r3(a.y+Math.sin(ang)*L)}}
 function addBox(a,b){
   const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y); if(w<.2||h<.2) return;
@@ -1403,7 +1453,7 @@ function addPencil(raw){
   let P=rdp(raw,Math.max(.08,2.5/view.scale)); if(closed&&P.length>3)P=P.slice(0,-1);
   P=markCorners(P.map(p=>({x:r3(p.x),y:r3(p.y)})),closed,40);
   if(P.length<(closed?3:2)) return;
-  const id=uid(); let joined=null; mutate(()=>{doc.shapes.push({id,type:'path',pts:P,closed,name:'',free:true});if(!closed)joined=autoJoin(id)}); pick.lastPencil=joined?joined.id:id;
+  const id=uid(); mutate(()=>doc.shapes.push({id,type:'path',pts:P,closed,name:'',free:true})); pick.lastPencil=id;
 }
 function clickExtend(w){
   let best=null; for(const sh of doc.shapes){ if(sh.type!=='path'||sh.closed||sh.locked) continue; const n=sh.pts.length;
@@ -1703,7 +1753,9 @@ const ACT={
   arrange, lock(){const ss=selShapes();if(!ss.length)return;const all=ss.every(s=>s.locked);mutate(()=>ss.forEach(s=>s.locked=!all));toast(all?'Destravado':'Travado')},
   photo, print(){openPrint()}, del(){ if(selPoint&&tool==='select') return ACT.delPt(); if(!sel.size) return;
     mutate(()=>{const ids=new Set(sel);doc.shapes=doc.shapes.filter(s=>!ids.has(s.id)&&!isChildOf(s,ids));sel.clear();selPoint=null})},
-  theme(){document.documentElement.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('atelie-theme',document.documentElement.dataset.theme)}catch(e){}updateButtons()},
+  theme(b){const cur=document.documentElement.dataset.theme||'auto';
+    showPop(b&&b.offsetParent?b:(mobile?$('#moreBtn'):$('#tb-theme')),`<b>Tema</b><div class="themes">${THEMES.map(([k,l,c1,c2])=>`<button type="button" class="themeopt${cur===k?' on':''}" data-th="${k}"><span class="sw2" style="background:linear-gradient(135deg,${c1} 50%,${c2} 50%)"></span>${l}</button>`).join('')}</div>`,
+      p=>p.querySelectorAll('[data-th]').forEach(x=>x.onclick=()=>{setTheme(x.dataset.th);hidePop()}))},
   panelToggle(){app.classList.toggle('panel-open');updateChip()},
   more(){const needSel=['rotate','flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,measures:measuresOn,hidePts,resize:resizeMode};
     $('#moreGrid').innerHTML=MORE.map(([a,l,i])=>`<button data-m="${a}"${(needSel.includes(a)&&!sel.size)||(a==='smooth'&&!sel.size&&!selPoint)?' disabled':''} class="${on[a]?'on':''}">${ic(i)}<span>${l}</span></button>`).join('');
@@ -1718,6 +1770,8 @@ const ACT={
     for(const s of doc.shapes)if(s.parent&&map[s.parent]){const c=clone(s);c.id=uid();c.parent=map[s.parent];out.push(c)}
     doc.shapes.push(...out);translate(new Set(Object.values(map)),{x:2,y:2});sel=new Set(Object.values(map));selPoint=null})},
   closePath(){const sh=selShapes()[0];mutate(()=>{sh.closed=true})},
+  grainEye(){const sh=selShapes()[0];if(sh)mutate(()=>{sh.grainHide=!sh.grainHide})},
+  grainBoth(){const sh=selShapes()[0];if(sh)mutate(()=>{sh.grainBoth=sh.grainBoth===false})},
   joinLoop(){const s=selShapes()[0],ch=s&&findLoop(s.id);if(!ch)return;let n;mutate(()=>{n=joinLoop(ch)});sel=new Set([n.id]);selPoint=null;renderPanel();render();toast('Linhas unidas em uma forma fechada')},
   toCons(){const sh=selShapes()[0];mutate(()=>{sh.piece=false})},
   unfoldSel(){const sh=selShapes()[0],fe=foldEdge(sh);if(fe)mutate(()=>unfoldAt(sh,fe.i))},
@@ -1730,7 +1784,7 @@ const ACT={
   autoTrace(){autoTrace()}, digLock(){const im=byId(pick.digit);mutate(()=>{im.locked=!im.locked})}, digRemove(){const id=pick.digit;mutate(()=>{doc.shapes=doc.shapes.filter(s=>s.id!==id)});pick={};renderPanel()},
   perimApply(){const p=pick.perim,sh=p&&byId(p.id);if(!sh)return;if(sh.locked)return toast('Molde travado');let ok=false;mutate(()=>{ok=redefine(sh,p.i,+opt.perimLen,opt.perimMode)});if(ok){pick.perim=null;renderPanel();toast('Comprimento redefinido')}},
   genApply(){const r=pick.region;if(!r)return;const srcId=pick.regionSrc;const id=uid();
-    mutate(()=>{const piece={id,type:'path',piece:true,closed:true,pts:r.map(p=>({x:r3(p.x),y:r3(p.y),s:!!p.s})),name:opt.genName||'Molde '+(doc.shapes.filter(s=>s.piece).length+1),labelSize:+opt.genText,grainA:+opt.genGrain,rot:opt.genRot,qtd:Math.max(1,Math.round(+opt.genQtd||1)),par:!!opt.genPar,fold:!!opt.genFold,seam:0};
+    mutate(()=>{const piece={id,type:'path',piece:true,closed:true,pts:r.map(p=>({x:r3(p.x),y:r3(p.y),s:!!p.s})),name:opt.genName||'Molde '+(doc.shapes.filter(s=>s.piece).length+1),labelSize:+opt.genText,grainA:opt.genGrain==='outro'?norm360(+opt.genGrainA||0):+opt.genGrain,rot:opt.genRot,qtd:Math.max(1,Math.round(+opt.genQtd||1)),par:!!opt.genPar,fold:!!opt.genFold,seam:0};
       if(srcId&&!opt.genRef){const src=byId(srcId);Object.assign(src,{piece:true,name:piece.name,labelSize:piece.labelSize,grainA:piece.grainA,rot:piece.rot,qtd:piece.qtd,par:piece.par,fold:piece.fold,seam:0});piece.id=src.id}
       else doc.shapes.push(piece);
       if(opt.genDel){const pb=boxOf(piece.pts);doc.shapes=doc.shapes.filter(s=>!(s.type==='path'&&!s.piece&&!s.parent&&(()=>{const b=shapeBox(s);return b.x<pb.x+pb.w+.5&&b.x+b.w>pb.x-.5&&b.y<pb.y+pb.h+.5&&b.y+b.h>pb.y-.5})()))}
@@ -2008,7 +2062,7 @@ function exportDXF(){
   add(0,'SECTION',2,'HEADER',9,'$INSUNITS',70,4,0,'ENDSEC',0,'SECTION',2,'ENTITIES');
   for(const s of doc.shapes){
     if(s.type==='path'){ if(s.piece&&s.closed){poly(sample(s),true,'CONTORNO');const S=seamPoly(s);if(S)poly(S,true,'COSTURA');const b=boxOf(s.pts);text(b.x+b.w/2,b.y+b.h/2,s.labelSize||1.4,(s.name||'Molde')+' - cortar '+(s.qtd||1)+'x'+(s.fold?' na dobra':''),'TEXTO');
-        const a=(s.grainA??90)*Math.PI/180,Lg=b.h*.5;line({x:b.x+b.w/2-Math.cos(a)*Lg/2,y:b.y+b.h/2-Math.sin(a)*Lg/2},{x:b.x+b.w/2+Math.cos(a)*Lg/2,y:b.y+b.h/2+Math.sin(a)*Lg/2},'FIO');
+        const G=grainGeom(s);if(!s.grainHide)line({x:G.x1,y:G.y1},{x:G.x2,y:G.y2},'FIO');
         if(hasGrade(s))for(const z of doc.sizes)if(!z.base)poly(sample({...s,pts:gradedPts(s,z)}),true,'TAM_'+ascii(z.name).replace(/\s+/g,'_'));}
       else poly(sample(s),s.closed,'CONSTRUCAO'); }
     else if(s.type==='notch'){const h=(+s.h||6)/10;line(s,{x:s.x+Math.cos(s.a)*h,y:s.y+Math.sin(s.a)*h},'PIQUES')}
@@ -2116,10 +2170,9 @@ function drawPDF(pdf,ox,oy){
           pdf.setDrawColor(192,57,43);pdf.setLineWidth(.012);pdf.setLineDashPattern([.4,.1,.1,.1],0);for(let k=1;k<+p.hem.n;k++)line({x:p.x+nx*p.hem.w*k,y:p.y+ny*p.hem.w*k},{x:q.x+nx*p.hem.w*k,y:q.y+ny*p.hem.w*k});ink()})}
       pdf.setLineWidth(.028); if(s.dotted)pdf.setLineDashPattern([.06,.12],0); poly(sample(s),true); pdf.setLineDashPattern([],0);
       // grain line
-      const b=boxOf(s.pts),cx=b.x+b.w/2,cy=b.y+b.h/2,a=(s.grainA??90)*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a);
-      const L=Math.max(4,.55*(Math.abs(uy)*b.h+Math.abs(ux)*b.w)),ah=Math.min(1,L*.12),p1={x:cx-ux*L/2,y:cy-uy*L/2},p2={x:cx+ux*L/2,y:cy+uy*L/2};
-      pdf.setLineWidth(.02); line(p1,p2);
-      for(const [p,vx,vy] of [[p2,ux,uy],[p1,-ux,-uy]]){line(p,{x:p.x-vx*ah-vy*ah*.45,y:p.y-vy*ah+vx*ah*.45});line(p,{x:p.x-vx*ah+vy*ah*.45,y:p.y-vy*ah-vx*ah*.45})}
+      const G=grainGeom(s),{cx,cy,ux,uy,ah}=G,p1={x:G.x1,y:G.y1},p2={x:G.x2,y:G.y2};
+      if(!s.grainHide){pdf.setLineWidth(.02); line(p1,p2);
+        for(const [p,vx,vy] of (s.grainBoth!==false?[[p2,ux,uy],[p1,-ux,-uy]]:[[p2,ux,uy]])){line(p,{x:p.x-vx*ah-vy*ah*.45,y:p.y-vy*ah+vx*ah*.45});line(p,{x:p.x-vx*ah+vy*ah*.45,y:p.y-vy*ah-vx*ah*.45})}}
       // labels
       const fs=+s.labelSize||1.4, vert=Math.abs(uy)>.5, tx=vert?cx+fs*.6:cx, ty=vert?cy-fs*.6:cy-fs*1.1, al=vert?'left':'center';
       let yy=ty; for(const Ln of pieceLines(s,{nome:PR.nome,textos:PR.textos,base:PR.base})){pdf.setFont('helvetica',Ln.b?'bold':'normal');pdf.setFontSize(PT(fs*Ln.k));pdf.text(String(Ln.t),X(tx),Y(yy),{align:al});yy+=fs*Math.max(Ln.k,.72)*1.2}
@@ -2186,6 +2239,19 @@ let toastT;function toast(t){const el=$('#toast');el.textContent=t;el.hidden=fal
 try{const th=localStorage.getItem('atelie-theme');if(th)document.documentElement.dataset.theme=th}catch(e){}
 buildChrome(); load();
 $('#top').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)act(b.dataset.act,b)});
+// instant tooltips for mouse users (the browser's native title tooltip waits about a second)
+(()=>{const tip=document.createElement('div');tip.className='tip';tip.hidden=true;document.body.appendChild(tip);let cur=null;
+  const hide=()=>{tip.hidden=true;cur=null};
+  document.addEventListener('pointerover',e=>{if(e.pointerType!=='mouse')return;const el=e.target.closest&&e.target.closest('[title],[data-tip]');
+    if(!el||el.closest('svg')){hide();return} if(el.title){el.dataset.tip=el.title;el.removeAttribute('title')}
+    const t=el.dataset.tip;if(!t){hide();return} cur=el;tip.textContent=t;tip.hidden=false;
+    const r=el.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight,side=!!el.closest('#rail');
+    let x=side?r.right+8:r.left+r.width/2-w/2,y=side?r.top+r.height/2-h/2:r.bottom+6;
+    if(!side&&y+h>innerHeight-4)y=r.top-h-6; x=clamp(x,4,innerWidth-w-4); y=clamp(y,4,innerHeight-h-4);
+    tip.style.left=x+'px';tip.style.top=y+'px'});
+  document.addEventListener('pointerout',e=>{if(cur&&!cur.contains(e.relatedTarget))hide()});
+  document.addEventListener('pointerdown',hide,true); addEventListener('blur',hide);
+})();
 // phone: "Opções" chip on the canvas and the sheet's grab handle open/close the options panel
 $('#tcBtn').addEventListener('click',()=>act('panelToggle'));
 document.querySelector('.panel .grab').addEventListener('click',()=>act('panelToggle'));
