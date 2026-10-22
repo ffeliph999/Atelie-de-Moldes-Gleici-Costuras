@@ -1253,7 +1253,7 @@ function panelPath(s){
     return sec(s.closed?'Forma de construção':'Linha de construção',lock+posFields+
       (line2?rowI('Comprimento:',`<input type="number" step="0.1" min="0.1" id="p-lineLen" data-k="lineLen">`,'cm'):`<dl class="stats"><dt>${s.closed?'Perímetro':'Comprimento'}</dt><dd data-stat="len"></dd></dl>`)+
       hint(s.closed?'Use <b>Gerar molde</b> e clique dentro dela para transformar em molde.':'Linhas de construção ajudam a desenhar. Feche áreas com elas e use <b>Gerar molde</b>.')+
-      `<div class="acts">${!s.closed&&s.pts.length>=3?btn('closePath','Fechar forma'):''}${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)+pt; }
+      `<div class="acts">${!s.closed&&findLoop(s.id)?btn('joinLoop','Unir em forma fechada','primary'):''}${!s.closed&&s.pts.length>=3?btn('closePath','Fechar forma'):''}${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)+pt; }
   return sec('Posição e tamanho',lock+posFields+
      `<dl class="stats"><dt>Perímetro</dt><dd data-stat="len"></dd><dt>Área</dt><dd data-stat="area"></dd></dl>`)+
    sec('Propriedades',
@@ -1362,13 +1362,35 @@ function finishPoly(closed){
   if(pts.length<(closed?3:2)){temp=null;render();return}
   if(temp.kind==='curve') pts.forEach((p,i)=>p.s=closed||(i>0&&i<pts.length-1));
   const sh={id:uid(),type:'path',pts,closed,name:''}; temp=null;
-  mutate(()=>doc.shapes.push(sh)); render();
+  mutate(()=>{doc.shapes.push(sh);if(!closed)autoJoin(sh.id)}); render();
 }
 // single straight line: start point is temp.pts[0]
 function addLine(b){
   const a=temp&&temp.pts[0]; temp=null; if(!a||dist(a,b)<.05) return;
-  mutate(()=>doc.shapes.push({id:uid(),type:'path',pts:[{x:r3(a.x),y:r3(a.y),s:false},{x:r3(b.x),y:r3(b.y),s:false}],closed:false,name:''}));
+  const id=uid(); mutate(()=>{doc.shapes.push({id,type:'path',pts:[{x:r3(a.x),y:r3(a.y),s:false},{x:r3(b.x),y:r3(b.y),s:false}],closed:false,name:''});autoJoin(id)});
 }
+/* open lines joined end to end into a closed loop become one closed shape */
+function findLoop(startId){
+  const tol=.02,same=(a,b)=>Math.abs(a.x-b.x)<tol&&Math.abs(a.y-b.y)<tol;
+  const open=doc.shapes.filter(s=>s.type==='path'&&!s.closed&&!s.piece&&!s.parent);
+  const st=open.find(s=>s.id===startId); if(!st) return null;
+  const first=st.pts[0]; let cur=st.pts[st.pts.length-1]; const chain=[{s:st,rev:false}],used=new Set([st.id]);
+  for(let k=0;k<500;k++){
+    if(same(cur,first)) return (chain.length>1||st.pts.length>3)?chain:null;
+    const nb=open.filter(s=>!used.has(s.id)&&(same(s.pts[0],cur)||same(s.pts[s.pts.length-1],cur)));
+    if(nb.length!==1) return null;
+    const s=nb[0],rev=!same(s.pts[0],cur); chain.push({s,rev}); used.add(s.id); cur=rev?s.pts[0]:s.pts[s.pts.length-1];
+  }
+  return null;
+}
+function joinLoop(chain){
+  let pts=[];
+  chain.forEach(({s,rev},k)=>{let P=s.pts.map(p=>({...p}));if(rev)P.reverse();P[0].s=false;P[P.length-1].s=false;if(k>0)P=P.slice(1);pts=pts.concat(P)});
+  pts.pop(); pts.forEach(p=>{delete p.e;delete p.e2;delete p.hem});
+  const ids=new Set(chain.map(c=>c.s.id)), sh={id:uid(),type:'path',closed:true,name:'',pts};
+  doc.shapes=doc.shapes.filter(s=>!ids.has(s.id)); doc.shapes.push(sh); return sh;
+}
+function autoJoin(id){const ch=findLoop(id);if(!ch)return null;const sh=joinLoop(ch);toast('Contorno fechado: as linhas viraram uma forma só');return sh}
 function constrain(a,w){const L0=dist(a,w),st=Math.PI/4,ang=Math.round(Math.atan2(w.y-a.y,w.x-a.x)/st)*st;const L=snapOn?Math.round(L0*10)/10:L0;return{x:r3(a.x+Math.cos(ang)*L),y:r3(a.y+Math.sin(ang)*L)}}
 function addBox(a,b){
   const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y); if(w<.2||h<.2) return;
@@ -1381,7 +1403,7 @@ function addPencil(raw){
   let P=rdp(raw,Math.max(.08,2.5/view.scale)); if(closed&&P.length>3)P=P.slice(0,-1);
   P=markCorners(P.map(p=>({x:r3(p.x),y:r3(p.y)})),closed,40);
   if(P.length<(closed?3:2)) return;
-  const id=uid(); mutate(()=>doc.shapes.push({id,type:'path',pts:P,closed,name:'',free:true})); pick.lastPencil=id;
+  const id=uid(); let joined=null; mutate(()=>{doc.shapes.push({id,type:'path',pts:P,closed,name:'',free:true});if(!closed)joined=autoJoin(id)}); pick.lastPencil=joined?joined.id:id;
 }
 function clickExtend(w){
   let best=null; for(const sh of doc.shapes){ if(sh.type!=='path'||sh.closed||sh.locked) continue; const n=sh.pts.length;
@@ -1696,6 +1718,7 @@ const ACT={
     for(const s of doc.shapes)if(s.parent&&map[s.parent]){const c=clone(s);c.id=uid();c.parent=map[s.parent];out.push(c)}
     doc.shapes.push(...out);translate(new Set(Object.values(map)),{x:2,y:2});sel=new Set(Object.values(map));selPoint=null})},
   closePath(){const sh=selShapes()[0];mutate(()=>{sh.closed=true})},
+  joinLoop(){const s=selShapes()[0],ch=s&&findLoop(s.id);if(!ch)return;let n;mutate(()=>{n=joinLoop(ch)});sel=new Set([n.id]);selPoint=null;renderPanel();render();toast('Linhas unidas em uma forma fechada')},
   toCons(){const sh=selShapes()[0];mutate(()=>{sh.piece=false})},
   unfoldSel(){const sh=selShapes()[0],fe=foldEdge(sh);if(fe)mutate(()=>unfoldAt(sh,fe.i))},
   delPt(){if(!selPoint)return;const sh=byId(selPoint.id);if(!sh||sh.locked)return;if(sh.pts.length<=(sh.closed?3:2))return toast('A forma precisa de mais pontos');mutate(()=>{sh.pts.splice(selPoint.i,1);selPoint=null})},
