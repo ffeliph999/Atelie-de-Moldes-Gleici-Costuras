@@ -8,7 +8,7 @@ Funciona no computador e no celular (em pé ou deitado).
 
 ## Como usar
 
-- **Online:** abra o endereço do site publicado (veja [Publicar no GitHub Pages](#publicar-no-github-pages)).
+- **Online:** abra o endereço do site publicado https://ffeliph999.github.io/Ateli-de-Moldes-Gleici-Costuras/
 - **No computador, sem internet de hospedagem:** dê dois cliques no arquivo `index.html` para abrir no Chrome, Edge ou Firefox.
 
 Na primeira vez o editor abre com um molde de exemplo (camiseta básica: frente, costas e manga, com gradação P/M/G/GG), para você explorar as ferramentas. Para começar um molde seu, clique na pasta (canto superior esquerdo) → **Novo molde**.
