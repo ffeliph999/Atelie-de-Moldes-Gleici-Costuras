@@ -299,7 +299,8 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 }
 @media (prefers-reduced-motion:reduce){.drawer,.panel{transition:none}}
 /* ---------- phone mode ---------- */
-#moreBtn,.grab,.toolchip{display:none}
+#moreBtn,.grab,.toolchip,.rail .mob-only{display:none}
+.app.mobile .rail .mob-only{display:inline-grid}
 .app.mobile{grid-template-rows:50px minmax(0,1fr)}
 .app.mobile .top{padding:0 4px;gap:0}
 .app.mobile .top .tb{width:40px;height:40px}
@@ -675,7 +676,8 @@ function buildChrome(){
   $('#top').innerHTML=h;
   let r='';
   for(const t of RAIL){ if(t==='-'){r+='<hr>';continue}
-    const k=t[2]?` (${t[2]})`:''; r+=`<button class="tb" data-tool="${t[0]}" title="${t[1]}${k}" aria-label="${t[1]}">${ic(t[0])}</button>`; }
+    const k=t[2]?` (${t[2]})`:''; r+=`<button class="tb" data-tool="${t[0]}" title="${t[1]}${k}" aria-label="${t[1]}">${ic(t[0])}</button>`;
+    if(t[0]==='select') r+=`<button class="tb mob-only" id="rail-resize" data-act="resize" title="Redimensionar" aria-label="Redimensionar">${ic('resize')}</button>`; }
   $('#rail').innerHTML=r;
 }
 
@@ -1098,7 +1100,7 @@ let lastLandscape=innerWidth>innerHeight;
 addEventListener('resize',()=>{if(uiPref==='auto')applyUI();const ls=innerWidth>innerHeight;if(ls!==lastLandscape){lastLandscape=ls;if(mobile)requestAnimationFrame(fit)}});
 const MORE=[['zin','Mais zoom','zin'],['zout','Menos zoom','zout'],['fitv','Ajustar à tela','fit'],['z100','Tamanho real','measures'],
   ['snap','Ímã','snap'],['guides','Guias','guides'],['measures','Mostrar medidas','measures'],['hidePts','Esconder pontos','hidePts'],
-  ['smooth','Suavizar curvas','smooth'],['resize','Redimensionar','resize'],['rotate','Rotacionar','rotate'],['flipV','Inverter na vertical','flipV'],
+  ['smooth','Suavizar curvas','smooth'],['rotate','Rotacionar','rotate'],['flipV','Inverter na vertical','flipV'],
   ['flipH','Inverter na horizontal','flipH'],['arrange','Reorganizar painéis','arrange'],['lock','Travar','lock'],['photo','Fotografar moldes','photo'],
   ['print','Imprimir','print'],['export','Exportar','menu'],['newMolde','Novo molde','rect'],['theme','Tema claro/escuro','sun'],['uiMode','Modo computador','monitor'],['help','Ajuda','select']];
 function toolPanel(t){
@@ -1317,12 +1319,12 @@ function updateButtons(){
   const set=(id,dis,on)=>{const b=$('#tb-'+id);if(!b)return;if(dis!=null)b.disabled=dis;if(on!=null)b.classList.toggle('on',on)};
   set('undo',!undoS.length);set('redo',!redoS.length);
   ['rotate','flipV','flipH','lock','del'].forEach(k=>set(k,!has));
-  set('resize',false,resizeMode);
+  set('resize',false,resizeMode); const rr=$('#rail-resize'); if(rr) rr.classList.toggle('on',resizeMode);
   set('smooth',!(has||selPoint));
   set('snap',null,snapOn);set('guides',null,guidesOn);set('measures',null,measuresOn);set('hidePts',null,hidePts);
   set('lock',null,has&&selShapes().every(s=>s.locked));
   const dark=isDark(); const t=$('#tb-theme'); if(t){t.innerHTML=ic(dark?'sun':'moon');t.title=dark?'Tema claro':'Tema escuro'}
-  document.querySelectorAll('#rail .tb').forEach(b=>b.classList.toggle('on',b.dataset.tool===tool||(tool==='calibrate'&&b.dataset.tool==='digitize')));
+  document.querySelectorAll('#rail .tb[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===tool||(tool==='calibrate'&&b.dataset.tool==='digitize')));
   $('#stSnap').textContent=snapOn?'ímã ligado':'ímã desligado';
 }
 function isDark(){const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
@@ -2147,7 +2149,7 @@ $('#helpBtn').addEventListener('click',()=>openModal('helpModal'));
 try{const th=localStorage.getItem('atelie-theme');if(th)document.documentElement.dataset.theme=th}catch(e){}
 buildChrome(); load();
 $('#top').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)act(b.dataset.act,b)});
-$('#rail').addEventListener('click',e=>{const b=e.target.closest('[data-tool]');if(!b)return;const t=b.dataset.tool;setTool(tool===t&&t!=='select'?'select':t)});
+$('#rail').addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(a){act(a.dataset.act,a);return}const b=e.target.closest('[data-tool]');if(!b)return;const t=b.dataset.tool;setTool(tool===t&&t!=='select'?'select':t)});
 $('#docTitle').value=doc.meta.nome;
 $('#docTitle').addEventListener('input',e=>{doc.meta.nome=e.target.value;const f=$('#m-nome');if(f)f.value=e.target.value;scheduleSave()});
 $('#zoomSel').addEventListener('change',e=>{const v=e.target.value;if(v==='fit')fit();else if(v!=='cur')setZoomPct(+v);e.target.blur()});
