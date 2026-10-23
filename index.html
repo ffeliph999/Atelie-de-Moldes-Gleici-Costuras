@@ -191,7 +191,7 @@ dl.stats dt{color:var(--muted)} dl.stats dd{margin:0;text-align:right;font-famil
 .sbar.sh .thumb{top:3px;height:4px}.sbar.sh:hover .thumb,.sbar.sh.drag .thumb{top:1px;height:8px}
 .sbar.sv .thumb{left:3px;width:4px}.sbar.sv:hover .thumb,.sbar.sv.drag .thumb{left:1px;width:8px}
 .app.mobile .sbar{opacity:.55}
-.texted{position:absolute;z-index:8;margin:0;padding:0 4px;border:1.5px dashed var(--accent);border-radius:4px;background:color-mix(in srgb,var(--paper) 70%,transparent);color:var(--ink);font-family:var(--font-ui);outline:none;line-height:1.3}
+.texted{position:absolute;z-index:8;margin:0;padding:0 4px;resize:none;overflow:hidden;white-space:pre;line-height:1.2 !important;border:1.5px dashed var(--accent);border-radius:4px;background:color-mix(in srgb,var(--paper) 70%,transparent);color:var(--ink);font-family:var(--font-ui);outline:none;line-height:1.3}
 .themes{display:grid;gap:4px}
 .themeopt{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--chrome-2);color:var(--ink);border-radius:7px;padding:7px 9px;text-align:left;font-size:12.5px}
 .themeopt.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -253,8 +253,9 @@ a.help{display:block;text-decoration:none}
 .fields{display:grid;gap:14px;align-content:start}
 .fld{display:grid;gap:2px}
 .fld>span{font-size:12px;color:var(--muted)}
-.fld input{border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 0;font-size:16px;outline:none;min-width:0;width:100%}
-.fld input:focus{border-color:var(--accent)}
+.fld input,.fld textarea{border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 0;font-size:16px;outline:none;min-width:0;width:100%}
+.fld textarea{font-family:inherit;color:inherit;line-height:1.3}
+.fld input:focus,.fld textarea:focus{border-color:var(--accent)}
 .fld .err{display:none;color:var(--warn);font-size:12px}
 .fld.bad>span,.fld.bad .err{color:var(--warn);display:block}
 .fld.bad>span{display:block}
@@ -639,7 +640,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 (()=>{let m=document.querySelector('meta[name="viewport"]');
   if(!m){m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m)}
   if(!/interactive-widget/.test(m.content))m.content+=',interactive-widget=resizes-content'})();
-const VERSION='2026.10.24-6'; // shown under "Meus moldes" so a cached old copy is easy to spot
+const VERSION='2026.10.24-8'; // shown under "Meus moldes" so a cached old copy is easy to spot
 const PXCM=96/2.54, NS='http://www.w3.org/2000/svg', STORE='atelie-moldes-v1', OPTKEY='atelie-moldes-opts';
 const $=s=>document.querySelector(s);
 const app=$('#app'), svg=$('#cv'), panelBody=$('#panelBody'), stage=$('#stage');
@@ -812,7 +813,7 @@ function polyLen(P,closed){let l=0;for(let i=1;i<P.length;i++)l+=dist(P[i-1],P[i
 function boxOf(P){let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of P){if(p.x<x0)x0=p.x;if(p.y<y0)y0=p.y;if(p.x>x1)x1=p.x;if(p.y>y1)y1=p.y}return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
 function unionBox(bs){bs=bs.filter(b=>b&&isFinite(b.x));if(!bs.length)return null;let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const b of bs){x0=Math.min(x0,b.x);y0=Math.min(y0,b.y);x1=Math.max(x1,b.x+b.w);y1=Math.max(y1,b.y+b.h)}return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
 // corners of a text's box, turned by its rotation (rotNow, degrees, around the text's anchor)
-function textCorners(s){const w=Math.max(.5,s.size*.56*String(s.text).length),h=s.size*1.25,a=(+s.rotNow||0)*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
+function textCorners(s){const L=String(s.text).split('\n'),w=Math.max(.5,s.size*.56*Math.max(...L.map(l=>l.length))),h=s.size*(1.25+1.2*(L.length-1)),a=(+s.rotNow||0)*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
   return [[0,-s.size],[w,-s.size],[w,h-s.size],[0,h-s.size]].map(([dx,dy])=>({x:s.x+dx*co-dy*si,y:s.y+dx*si+dy*co}))}
 function shapeBox(s){
   if(s.type==='path') return boxOf(sample(s));
@@ -1032,7 +1033,7 @@ function dxfToShapes(D,fname,RUL){
       else if(e.type==='ARC')P=arcPts(e,false);
       else if(e.type==='CIRCLE'){P=arcPts(e,true);closed=true}
       else if((e.type==='TEXT'||e.type==='MTEXT')&&e.text&&/^#\s*\d+$/.test(e.text.trim())){const q=tf({x:e.x,y:e.y});ruleTags.push({x:q.x,y:q.y,n:+e.text.replace('#','').trim()});continue}
-      else if((e.type==='TEXT'||e.type==='MTEXT')&&e.text){const q=tf({x:e.x,y:e.y});made.push({id:uid(),type:'text',x:q.x,y:q.y,text:e.text.replace(/\\P/g,' ').replace(/\{|\}|\\[A-Za-z][^;]*;/g,''),size:Math.max(.3,(e.r||2.5)*D.k)});continue}
+      else if((e.type==='TEXT'||e.type==='MTEXT')&&e.text){const q=tf({x:e.x,y:e.y});made.push({id:uid(),type:'text',x:q.x,y:q.y,text:e.text.replace(/\\P/g,'\n').replace(/\{|\}|\\[A-Za-z][^;]*;/g,''),size:Math.max(.3,(e.r||2.5)*D.k)});continue}
       if(!P||P.length<2)continue;
       const lay=String(e.layer).toUpperCase(); if(/^(COSTURA|PIQUES|FIO|TAM_|COSTURA_TAM|BORDA)/.test(lay))continue;
       let Q=P.map(tf);if(Q.length>3){const ring=closed?Q.concat([Q[0]]):Q;let R=rdp(ring,.05);if(closed)R=R.slice(0,-1);if(R.length>=(closed?3:2))Q=R}
@@ -1167,7 +1168,8 @@ function shapesSVG(px,exp){
     } else if(sh.type==='mark'){ h+=markSVG(sh,px,exp,on);
     } else if(sh.type==='point'){ const r=exp?.12:3.2*px; const m=`<path class="${C('ptm')}" d="M${sh.x-r} ${sh.y-r}h${2*r}v${2*r}h${-2*r}z" stroke-width="${px*1.2}" style="fill:none"/>`;   // a small square, like molde.me
       h+=exp?m:`<g data-id="${sh.id}" class="${on?'sel':''}"><circle class="hitf" cx="${sh.x}" cy="${sh.y}" r="${9*px}"/>${m}</g>`;
-    } else if(sh.type==='text'){ if(!exp&&textEd&&textEd.id===sh.id) continue; if(exp&&XO&&!XO.textos) continue; h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}"${+sh.rotNow?` transform="rotate(${+sh.rotNow} ${sh.x} ${sh.y})"`:''}>${esc(sh.text)}</text>`; }
+    } else if(sh.type==='text'){ if(!exp&&textEd&&textEd.id===sh.id) continue; if(exp&&XO&&!XO.textos) continue; const TL=String(sh.text).split('\n');   // one line per row, 1.2× the size apart
+      h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}"${+sh.rotNow?` transform="rotate(${+sh.rotNow} ${sh.x} ${sh.y})"`:''}>${TL.length<2?esc(sh.text):TL.map((l,k)=>`<tspan x="${sh.x}" dy="${k?sh.size*1.2:0}">${esc(l)||' '}</tspan>`).join('')}</text>`; }
   }
   return h;
 }
@@ -1665,7 +1667,7 @@ function panelPath(s){
 }
 function panelImage(s){return sec('Imagem de fundo',`${rowI('Largura:',`<input type="number" id="i-w" data-k="w" value="${r3(s.w)}" step="0.5" min="0.5">`,'cm')}${rowI('Opacidade:',`<input type="number" id="i-op" data-k="opacity" value="${s.opacity??.6}" min="0.1" max="1" step="0.1">`)}
   <div class="acts">${btn('digOpen','Calibrar e contornar','primary')}${btn('del','Remover','danger')}</div>`+hint('Imagens travadas não podem ser clicadas. Destrave pela lista de imagens, com nada selecionado.'))}
-function panelText(s){return sec('Texto',`<label class="fld"><span>Texto</span><input id="t-text" data-k="text" value="${esc(s.text)}"></label>${rowI('Tamanho:',`<select id="t-size" data-k="size">${sizeOpts.map(([v,l])=>`<option value="${v}"${+s.size===v?' selected':''}>${l}</option>`).join('')}</select>`)}${rowI('Rotação:',`<input type="number" step="1" id="t-rot" data-k="rotNow" value="${+s.rotNow||0}">`,'°')}<div class="acts">${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)}
+function panelText(s){return sec('Texto',`<label class="fld"><span>Texto</span><textarea id="t-text" data-k="text" rows="${Math.min(6,String(s.text).split('\n').length+1)}" style="resize:vertical">${esc(s.text)}</textarea></label>${rowI('Tamanho:',`<select id="t-size" data-k="size">${sizeOpts.map(([v,l])=>`<option value="${v}"${+s.size===v?' selected':''}>${l}</option>`).join('')}</select>`)}${rowI('Rotação:',`<input type="number" step="1" id="t-rot" data-k="rotNow" value="${+s.rotNow||0}">`,'°')}<div class="acts">${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)}
 function panelSmall(s){const n={point:'Ponto',notch:'Pique',mark:'Marcação interna'}[s.type]||'Elemento';
   return sec(n,`${s.type==='notch'&&s.icon==='texto'||s.type==='mark'&&s.icon==='texto'?`<label class="fld"><span>Texto</span><input id="s-text" data-k="text" value="${esc(s.text||'')}"></label>`:''}${s.type==='notch'?rowI('Ícone:',`<select id="s-icon" data-k="icon">${[['tracop','Traço pequeno'],['traco','Traço médio'],['t','T'],['v','V'],['continuo','Pique contínuo'],['seta','Seta'],['texto','Texto']].map(([v,l])=>`<option value="${v}"${s.icon===v?' selected':''}>${l}</option>`).join('')}</select>`)+rowI('Altura:',`<input type="number" id="s-h" data-k="h" value="${s.h||6}" step="1" min="1">`,'mm'):''}
   ${s.type==='mark'?rowI('Ícone:',`<select id="s-icon" data-k="icon">${[['cruz','Cruz'],['circulo','Círculo'],['ponto','Ponto'],['texto','Texto']].map(([v,l])=>`<option value="${v}"${s.icon===v?' selected':''}>${l}</option>`).join('')}</select>`)+rowI('Tamanho:',`<input type="number" id="s-sz" data-k="size" value="${s.size||10}" step="1" min="1">`,'mm'):''}
@@ -1685,7 +1687,7 @@ function bindPanel(root){
       if(el.tagName==='SELECT'){const f=parseFloat(v);opt[k]=isFinite(f)&&String(f)===String(v)?f:v}
       else{if(typeof opt[k]==='number'&&v!==''&&!isFinite(v))return;opt[k]=v}
       saveOpt();
-      if(k==='textSize'&&textEd){textEd.size=+opt.textSize;placeTextEditor()}
+      if(k==='textSize'&&textEd){textEd.size=+opt.textSize;placeTextEditor();textEd.t0=performance.now();textEd.el.focus()}
       if(['tapeBase','tbBase','tapePin','tbPin','genGrain','nIcon','mIcon','nRedis','nRedisMode','perimMode','ptMode','nP','nMeas','showHandles','symHandles','keepCurve'].includes(k)){renderPanel();render()}});});
   // Marcar pontos: a ticked box fixes its measure; typing a value ticks it
   root.querySelectorAll('[data-ptk]').forEach(cb=>cb.addEventListener('change',()=>{const k=cb.dataset.ptk,K=ptLocks(),inp=document.getElementById('pt-'+k);
@@ -1811,23 +1813,28 @@ function constrain(a,w){const L0=dist(a,w),st=Math.PI/4,ang=Math.round(Math.atan
 let textEd=null; // {id|null, x, y, size, el, t0}
 function openTextEditor(o){
   closeTextEditor(true);
-  const inp=document.createElement('input'); inp.className='texted'; inp.value=o.text||''; inp.setAttribute('aria-label','Texto'); inp.autocomplete='off';
+  // a textarea: Enter starts a new line (like molde.me); Esc, Ctrl+Enter or a click outside finishes
+  const inp=document.createElement('textarea'); inp.className='texted'; inp.value=o.text||''; inp.setAttribute('aria-label','Texto'); inp.autocomplete='off'; inp.rows=1; inp.spellcheck=false;
   stage.appendChild(inp); textEd={id:o.id||null,x:o.x,y:o.y,size:+(o.size||opt.textSize)||1.4,el:inp,t0:performance.now()};
-  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();closeTextEditor(true)}else if(e.key==='Escape'){e.preventDefault();closeTextEditor(false)}});
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();closeTextEditor(true)}else if(e.key==='Escape'){e.preventDefault();closeTextEditor(true)}});
   inp.addEventListener('input',placeTextEditor);
   inp.addEventListener('pointerdown',e=>e.stopPropagation());
   // a touch tap ends with compatibility mouse events that steal focus right after opening: refocus once
-  inp.addEventListener('blur',()=>setTimeout(()=>{if(!textEd||textEd.el!==inp)return;if(performance.now()-textEd.t0<700)inp.focus();else closeTextEditor(true)},0));
+  // going to the options (size) keeps the text open, so its size can be changed while editing
+  inp.addEventListener('blur',e=>{const to=e.relatedTarget;if(to&&to.closest&&to.closest('#panel,[data-act="panelToggle"]'))return;
+    setTimeout(()=>{if(!textEd||textEd.el!==inp)return;if(performance.now()-textEd.t0<700)inp.focus();else closeTextEditor(true)},0)});
+  if(o.id&&o.size&&+opt.textSize!==+o.size){opt.textSize=+o.size;renderPanel()}   // the options show this text's size
   render(); setTimeout(()=>{inp.focus();inp.select()},0);
 }
 function placeTextEditor(){
   if(!textEd) return; const r=svg.getBoundingClientRect(),sr=stage.getBoundingClientRect(),fs=Math.max(12,textEd.size*view.scale),el=textEd.el;
   const x=r.left-sr.left+(textEd.x-view.x)*view.scale, y=r.top-sr.top+(textEd.y-view.y)*view.scale;
-  el.style.setProperty('font-size',fs+'px','important'); el.style.left=(x-4)+'px'; el.style.top=(y-fs*1.08)+'px'; el.style.height=(fs*1.4)+'px';
-  el.style.width=Math.max(90,(el.value.length+2)*fs*.62)+'px';
+  const L=el.value.split('\n'),long=Math.max(...L.map(s=>s.length));
+  el.style.setProperty('font-size',fs+'px','important'); el.style.left=(x-4)+'px'; el.style.top=(y-fs*1.08)+'px'; el.style.height=(fs*(L.length*1.2+.3))+'px';
+  el.style.width=Math.max(90,(long+2)*fs*.62)+'px';
 }
 function closeTextEditor(commit){
-  if(!textEd) return; const t=textEd; textEd=null; const v=t.el.value.trim(); t.el.remove();
+  if(!textEd) return; const t=textEd; textEd=null; const v=t.el.value.replace(/\s+$/,'').replace(/^\s*\n/,''); t.el.remove();
   if(commit){ if(t.id){const sh=byId(t.id);if(sh)mutate(()=>{if(v){sh.text=v;sh.size=t.size}else doc.shapes=doc.shapes.filter(s=>s.id!==t.id)})}
     else if(v) mutate(()=>doc.shapes.push({id:uid(),type:'text',x:r3(t.x),y:r3(t.y),text:v,size:t.size})); }
   render();
@@ -2361,7 +2368,9 @@ function rotFrame(){const ss=selShapes().filter(s=>!s.locked);if(!ss.length)retu
   for(const s of ss){if(s.type==='path')P.push(...sample(s));else if(s.type==='text')P.push(...textCorners(s));else{const b=shapeBox(s);P.push({x:b.x,y:b.y},{x:b.x+b.w,y:b.y},{x:b.x+b.w,y:b.y+b.h},{x:b.x,y:b.y+b.h})}}
   const b=boxOf(P.map(p=>({x:p.x*co+p.y*si,y:-p.x*si+p.y*co}))),back=(x,y)=>({x:x*co-y*si,y:x*si+y*co});
   const corners=[[b.x,b.y],[b.x+b.w,b.y],[b.x+b.w,b.y+b.h],[b.x,b.y+b.h]].map(([x,y])=>back(x,y)),c=back(b.x+b.w/2,b.y+b.h/2);
-  return {key,ang,corners,c,piv:rotPiv&&rotPiv.key===key?{x:rotPiv.x,y:rotPiv.y}:c,ss}}
+  // the axis is kept relative to the turned box, so it follows the piece when it is moved or turned
+  const piv=rotPiv&&rotPiv.key===key?(q=>({x:c.x+q.x,y:c.y+q.y}))(back(rotPiv.dx,rotPiv.dy)):c;
+  return {key,ang,corners,c,piv,ss,local:p=>{const dx=p.x-c.x,dy=p.y-c.y;return{dx:dx*co+dy*si,dy:-dx*si+dy*co}}}}
 function scaleSel(sx,sy){const b=selBox();if(!b)return;mutate(()=>xform(new Set(sel),p=>({x:b.x+(p.x-b.x)*sx,y:b.y+(p.y-b.y)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})}))}
 function applyAutoGrade(sh,ag){
   const b=boxOf(sh.pts),fe=sh.fold?foldEdge(sh):null,ax=fe?fe.X:b.x,ay=b.y;
@@ -2765,7 +2774,7 @@ function onMove(e){
       if(dr.length===2&&e.shiftKey){const s=Math.abs(sx-1)>Math.abs(sy-1)?sx:sy;sx=sy=s}
       const ax=dr.includes('w')?b.x+b.w:b.x,ay=dr.includes('n')?b.y+b.h:b.y;
       doc.shapes=JSON.parse(drag.s0);xform(drag.ids,q=>({x:ax+(q.x-ax)*sx,y:ay+(q.y-ay)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})});drag.moved=true;break}
-    case 'pivot': {const p=snapOn?snap(w):w;rotPiv={key:drag.key,x:p.x,y:p.y};break}
+    case 'pivot': {const p=snapOn?snap(w):w,F=rotFrame();if(F)rotPiv={key:drag.key,...F.local(p)};break}
     case 'rotate': {const c=drag.piv;let d=(Math.atan2(w.y-c.y,w.x-c.x)-drag.a0)*180/Math.PI;d=((d%360)+540)%360-180;if(e.shiftKey)d=Math.round(d/15)*15;
       doc.shapes=JSON.parse(drag.s0);rotateAround(drag.ids,c,d);drag.ang=d;drag.moved=true;if(drag.multi)rotGrp={key:drag.key,ang:drag.ang0+d};break}
     case 'pencil': {const l=drag.pts[drag.pts.length-1];if(dist(l,w)*view.scale>2)drag.pts.push(w);break}
@@ -2916,7 +2925,7 @@ function exportDXF(){
     else if(s.type==='mark'&&s.icon==='texto') text(s.x,s.y,+s.ts||.6,s.text||'','TEXTO');
     else if(s.type==='mark'){const r=(+s.size||10)/20;line({x:s.x-r,y:s.y},{x:s.x+r,y:s.y},'MARCAS');line({x:s.x,y:s.y-r},{x:s.x,y:s.y+r},'MARCAS')}
     else if(s.type==='point'){add(0,'POINT',8,'PONTOS',10,mm(s.x),20,mm(-s.y),30,0)}
-    else if(s.type==='text'&&(!XO||XO.textos)) text(s.x,s.y,s.size,s.text,'TEXTO',+s.rotNow||0);
+    else if(s.type==='text'&&(!XO||XO.textos)){const a=(+s.rotNow||0)*Math.PI/180;String(s.text).split('\n').forEach((l,k)=>{const d=k*s.size*1.2;if(l.trim())text(s.x-Math.sin(a)*d,s.y+Math.cos(a)*d,s.size,l,'TEXTO',+s.rotNow||0)})}   // one TEXT per line
   }
   if(XO&&XO.bordas){const W=doc.meta.largura,H=doc.meta.altura;poly([{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}],true,'BORDA')}
   add(0,'ENDSEC',0,'EOF'); return L.join('\r\n');
@@ -3179,7 +3188,7 @@ function drawPDF(pdf,ox,oy){
       if(s.icon==='texto'){pdf.setFont('helvetica','normal');pdf.setFontSize(PT(+s.ts||.6));pdf.text(String(s.text||''),X(s.x),Y(s.y),{align:'center',baseline:'middle'})}
       else if(s.icon==='circulo')pdf.circle(X(s.x),Y(s.y),r,'S');else if(s.icon==='ponto'){pdf.setFillColor(17,17,17);pdf.circle(X(s.x),Y(s.y),r*.35,'F');pdf.circle(X(s.x),Y(s.y),r,'S')}
       else{line({x:s.x-r,y:s.y},{x:s.x+r,y:s.y});line({x:s.x,y:s.y-r},{x:s.x,y:s.y+r})}
-    } else if(s.type==='text'&&PR.textos){pdf.setFont('helvetica','normal');pdf.setFontSize(PT(s.size));pdf.text(String(s.text),X(s.x),Y(s.y),+s.rotNow?{angle:-s.rotNow}:undefined)}
+    } else if(s.type==='text'&&PR.textos){pdf.setFont('helvetica','normal');pdf.setFontSize(PT(s.size));pdf.text(String(s.text).split('\n'),X(s.x),Y(s.y),{lineHeightFactor:1.2,...(+s.rotNow?{angle:-s.rotNow}:{})})}
   }
 }
 $('#prGo').addEventListener('click',()=>{
