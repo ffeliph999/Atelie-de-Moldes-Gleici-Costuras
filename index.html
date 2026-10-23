@@ -572,7 +572,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
       </section>
     </div>
     <p class="hint" id="prInfo" style="margin-top:14px"></p>
-    <p class="hint" id="prHelpText" hidden>Na impressora, escolha <b>tamanho real (100%)</b> e desligue “ajustar à página”. Depois de imprimir, confira uma medida com a régua. Cole as folhas pela numeração coluna-linha: <b>1-1, 1-2…</b> descem pela primeira coluna e <b>2-1, 2-2…</b> pela segunda. No visualizador do claude.ai downloads são bloqueados: abra o arquivo .html no seu navegador para baixar o PDF.</p>
+    <p class="hint" id="prHelpText" hidden>Na impressora, escolha <b>tamanho real (100%)</b> e desligue “ajustar à página”. Depois de imprimir, confira uma medida com a régua. Cole as folhas pela numeração linha-coluna, contada a partir do canto do projeto: <b>1-1, 2-1…</b> descem pela primeira coluna e <b>1-2, 2-2…</b> pela segunda. No visualizador do claude.ai downloads são bloqueados: abra o arquivo .html no seu navegador para baixar o PDF.</p>
     <div class="mfoot" style="justify-content:space-between;align-items:center">
       <button class="linkbtn" id="prHelp">Problemas com impressão?</button>
       <button class="btn printbtn" id="prGo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="1"/><path d="M7 14h10v7H7z"/></svg> Imprimir</button>
@@ -633,7 +633,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 (()=>{let m=document.querySelector('meta[name="viewport"]');
   if(!m){m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m)}
   if(!/interactive-widget/.test(m.content))m.content+=',interactive-widget=resizes-content'})();
-const VERSION='2026.10.24-2'; // shown under "Meus moldes" so a cached old copy is easy to spot
+const VERSION='2026.10.24-4'; // shown under "Meus moldes" so a cached old copy is easy to spot
 const PXCM=96/2.54, NS='http://www.w3.org/2000/svg', STORE='atelie-moldes-v1', OPTKEY='atelie-moldes-opts';
 const $=s=>document.querySelector(s);
 const app=$('#app'), svg=$('#cv'), panelBody=$('#panelBody'), stage=$('#stage');
@@ -788,12 +788,13 @@ function pathD(pts,closed){
 function segD(sh,i){const c=segCtrl(sh.pts,i,sh.closed);return `M${c[0].x} ${c[0].y}C${c[1].x} ${c[1].y} ${c[2].x} ${c[2].y} ${c[3].x} ${c[3].y}`}
 function polyD(P,closed=true){return P.map((p,i)=>(i?'L':'M')+r3(p.x)+' '+r3(p.y)).join('')+(closed?'Z':'')}
 // sample: points with seg (segment that ends at it), t (param in that segment), corner flag
+let SAMPLE_K=1;   // more points per curve while printing, so the PDF curves are smooth at real size
 function sample(sh,dense){
   const pts=sh.pts,n=pts.length; if(!n) return [];
   const out=[{x:pts[0].x,y:pts[0].y,seg:sh.closed?n-1:-1,t:1,corner:!pts[0].s}];
   const segs=sh.closed?n:n-1;
   for(let i=0;i<segs;i++){const c=segCtrl(pts,i,sh.closed); const st=straight(pts,i);
-    const N=st?((dense&&pts[i].e2!=null&&pts[i].e2!==''&&+pts[i].e2!==+pts[i].e)?8:1):16;
+    const N=st?((dense&&pts[i].e2!=null&&pts[i].e2!==''&&+pts[i].e2!==+pts[i].e)?8:1):16*SAMPLE_K;
     for(let k=1;k<=N;k++){const t=k/N; const q=st?{x:c[0].x+(c[3].x-c[0].x)*t,y:c[0].y+(c[3].y-c[0].y)*t}:bez(c,t);
       out.push({x:q.x,y:q.y,seg:i,t,corner:k===N&&!pts[(i+1)%n].s});}}
   if(sh.closed) out.pop();
@@ -872,6 +873,11 @@ function seamPoly(sh,ptsOverride){
     const sem=(P[segIn]&&P[segIn].cf==='sem')||(P[segOut]&&P[segOut].cf==='sem');
     if(p.corner&&sem&&Math.abs(det)>.05&&(d1||d2)){out.push({x:p.x+n1.x*d1,y:p.y+n1.y*d1,seg:segIn},{x:p.x,y:p.y,seg:segOut},{x:p.x+n2.x*d2,y:p.y+n2.y*d2,seg:segOut});continue}
     if(p.corner&&cf&&Math.abs(det)>.05){out.push({x:p.x+n1.x*d1,y:p.y+n1.y*d1,seg:segOut},{x:p.x+n2.x*d2,y:p.y+n2.y*d2,seg:segOut});continue}
+    // "redondo": an outer corner is rounded with an arc around the piece point
+    const rd=(P[segIn]&&P[segIn].cf==='redondo')||(P[segOut]&&P[segOut].cf==='redondo');
+    if(p.corner&&rd&&Math.abs(det)>.05&&d1>0&&d2>0){const a=Q[k0],b=Q[(k+1)%n],cr=(p.x-a.x)*(b.y-p.y)-(p.y-a.y)*(b.x-p.x);
+      if(Math.sign(cr)===Math.sign(signedArea(Q))){const da=Math.atan2(det,n1.x*n2.x+n1.y*n2.y),st=Math.max(2,Math.ceil(Math.abs(da)/(Math.PI/24))),a1=Math.atan2(n1.y,n1.x);
+        for(let j=0;j<=st;j++){const t=j/st,r=d1+(d2-d1)*t,an=a1+da*t;out.push({x:p.x+Math.cos(an)*r,y:p.y+Math.sin(an)*r,seg:segOut})}continue}}
     // on a curve point where the allowance changes value (e.g. 2 → 1), make a straight step like molde.me instead of a twisted miter
     if(!p.corner&&Math.abs(d1-d2)>1e-4){out.push({x:p.x+n1.x*d1,y:p.y+n1.y*d1,seg:segOut},{x:p.x+n2.x*d2,y:p.y+n2.y*d2,seg:segOut});continue}
     let vx,vy; if(Math.abs(det)<1e-3){const d=Math.abs(d1)>Math.abs(d2)?d1:d2;vx=n2.x*d;vy=n2.y*d}else{vx=(d1*n2.y-n1.y*d2)/det;vy=(n1.x*d2-d1*n2.x)/det}
@@ -1163,16 +1169,29 @@ function hemLines(sh,px,C){
   return h;
 }
 // grain line: anchored at the most interior point and sized to the space inside the piece along its direction
-function grainGeom(sh){
+// grain line like molde.me: 60% of the chord through the piece, moved sideways by `off` (to make room for the texts)
+function grainGeom(sh,off=0){
   const P=sample(sh),b=boxOf(P),n=P.length; let best={x:b.x+b.w/2,y:b.y+b.h/2},bd=-1;
   for(let i=1;i<16;i++)for(let j=1;j<16;j++){const q={x:b.x+b.w*i/16,y:b.y+b.h*j/16};if(!inPoly(q,P))continue;
     let d=Infinity;for(let k=0;k<n;k++){const v=segDist(q,P[k],P[(k+1)%n]);if(v<d)d=v}if(d>bd){bd=d;best=q}}
   const a=(sh.grainA??90)*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a);let tp=Infinity,tn=-Infinity;
+  const mid={x:best.x,y:best.y}; if(off){const q={x:best.x-uy*off,y:best.y+ux*off};if(inPoly(q,P))best=q}
   for(let k=0;k<n;k++){const A=P[k],C=P[(k+1)%n],ex=C.x-A.x,ey=C.y-A.y,det=-ux*ey+uy*ex;if(Math.abs(det)<1e-12)continue;
     const dx=A.x-best.x,dy=A.y-best.y,t=(-dx*ey+dy*ex)/det,s=(ux*dy-uy*dx)/det;if(s<0||s>1)continue;if(t>1e-6&&t<tp)tp=t;if(t<-1e-6&&t>tn)tn=t}
   if(!isFinite(tp))tp=Math.max(b.w,b.h)/2; if(!isFinite(tn))tn=-Math.max(b.w,b.h)/2;
-  const k=.8,x1=best.x+ux*tn*k,y1=best.y+uy*tn*k,x2=best.x+ux*tp*k,y2=best.y+uy*tp*k,L=Math.hypot(x2-x1,y2-y1);
-  return {cx:best.x,cy:best.y,ux,uy,x1,y1,x2,y2,L,ah:Math.min(1,Math.max(.3,L*.12))};
+  const m=(tp+tn)/2,hl=(tp-tn)/2*.6,x1=best.x+ux*(m-hl),y1=best.y+uy*(m-hl),x2=best.x+ux*(m+hl),y2=best.y+uy*(m+hl),L=Math.hypot(x2-x1,y2-y1);
+  return {cx:best.x,cy:best.y,mx:mid.x,my:mid.y,ux,uy,x1,y1,x2,y2,L,ah:Math.min(.606,Math.max(.3,L*.12))};
+}
+// piece texts like molde.me: they run along the grain, beside it, centred on the piece
+// (a single 1,4 cm name: grain 1,3 cm to one side of the centre, baseline 0,4 cm)
+function labelLayout(sh,lines){
+  const fs=+sh.labelSize||1.4,G=grainGeom(sh,lines.length?.932*fs:0);
+  let tx=G.ux,ty=G.uy; if(tx<-1e-6||(Math.abs(tx)<=1e-6&&ty<0)){tx=-tx;ty=-ty}   // never upside down
+  const vx=ty,vy=-tx,A=vx*-G.uy+vy*G.ux<=0,ang=Math.round(Math.atan2(ty,tx)*180/Math.PI*1000)/1000; // A: letter tops face away from the grain
+  const items=[];let pos=A?-.536*fs:.536*fs;   // the box edge next to the grain, along the letters' "up"
+  for(const L of A?lines.slice().reverse():lines){const k=fs*L.k,s=A?pos+.25*k:pos-k;pos+=A?1.25*k:-1.25*k;
+    items.push({t:String(L.t),b:L.b,size:k,x:G.mx+vx*s,y:G.my+vy*s,ang,tx,ty})}
+  return {G,items,fs};
 }
 const norm360=v=>((Math.round(v)%360)+360)%360;
 const GRAIN_DIRS=[[0,'→'],[45,'↘'],[90,'↓'],[135,'↙'],[180,'←'],[225,'↖'],[270,'↑'],[315,'↗']];
@@ -1185,11 +1204,10 @@ function grainFields(s){
     ${std?'':rowI('Ângulo do fio:',`<input type="number" id="p-grainA" data-k="grainA" value="${g}" step="1">`,'°')}`;
 }
 function decor(sh,px,C,exp){
-  let h=''; const fs=+sh.labelSize||1.4, G=grainGeom(sh), {cx,cy,ux,uy,x1,y1,x2,y2,ah}=G;
-  const head=(x,y,vx,vy)=>`M${x-vx*ah-vy*ah*.45} ${y-vy*ah+vx*ah*.45}L${x} ${y}L${x-vx*ah+vy*ah*.45} ${y-vy*ah-vx*ah*.45}`;
+  let h=''; const LY=labelLayout(sh,pieceLines(sh,exp&&XO?{nome:XO.nome,textos:XO.textos}:{})), fs=LY.fs, G=LY.G, {ux,uy,x1,y1,x2,y2,ah}=G;
+  const head=(x,y,vx,vy)=>`M${x-vx*ah-vy*ah*.577} ${y-vy*ah+vx*ah*.577}L${x} ${y}L${x-vx*ah+vy*ah*.577} ${y-vy*ah-vx*ah*.577}`;
   if(!sh.grainHide) h+=`<path class="${C('grain')}" d="M${x1} ${y1}L${x2} ${y2}${head(x2,y2,ux,uy)}${!!sh.grainBoth?head(x1,y1,-ux,-uy):''}" stroke-width="${px*1.1}"/>`;
-  const vert=Math.abs(uy)>.5, tx=vert?cx+fs*.6:cx, ty=vert?cy-fs*.6:cy-fs*1.1, an=vert?'start':'middle';
-  let yy=ty; for(const L of pieceLines(sh,exp&&XO?{nome:XO.nome,textos:XO.textos}:{})){h+=`<text class="${C('lbl')}" x="${tx}" y="${yy}" font-size="${fs*L.k}" text-anchor="${an}"${L.b?' font-weight="700"':''}>${esc(L.t)}</text>`;yy+=fs*Math.max(L.k,.72)*1.2}
+  for(const it of LY.items) h+=`<text class="${C('lbl')}" x="${r3(it.x)}" y="${r3(it.y)}" font-size="${it.size}" text-anchor="middle"${it.b?' font-weight="700"':''}${it.ang?` transform="rotate(${it.ang} ${r3(it.x)} ${r3(it.y)})"`:''}>${esc(it.t)}</text>`;
   const fe=sh.fold?foldEdge(sh):null;
   if(fe&&!(exp&&XO&&!XO.textos)){const p=sh.pts[fe.i],q=sh.pts[(fe.i+1)%sh.pts.length],my=(p.y+q.y)/2,x=fe.X+(fe.side==='min'?1:-1)*fs*.75;
     h+=`<text class="${C('lbl')}" x="${x}" y="${my}" font-size="${fs*.7}" text-anchor="middle" letter-spacing="${fs*.15}" transform="rotate(-90 ${x} ${my})">DOBRA</text>`}
@@ -1316,9 +1334,10 @@ function renderOverlay(vw,vh){
     if(run.length&&pv.remove){const S=seamPoly(sh);
       h+=`<path d="${S?runPath(S,run):''}" stroke="var(--warn)" stroke-width="${4*px}" opacity=".85" style="fill:none"/>`;
       h+=olabel(m.x,m.y-10*px,run.length>1?'Remover margem da curva':'Remover margem deste lado',px)}
-    else if(run.length){const a=+opt.seamA||0,b=opt.seamB===''||opt.seamB==null?a:+opt.seamB,P=sh.pts.map(p=>({...p}));seamSet(P,run,pv.side,a,b,sh.closed,pv.i);
+    else if(run.length){const a=+opt.seamA||0,b=opt.seamB===''||opt.seamB==null?a:+opt.seamB,P=seamSet(sh.pts.map(p=>({...p})),run,pv.side,a,b,sh.closed,pv.i);
       h+=`<path class="hl" d="${run.map(i=>segD(sh,i)).join('')}" stroke-width="${3*px}" opacity=".55" style="fill:none"/>`;
-      const S=seamPoly(sh,P); if(S) h+=`<path class="hl" d="${runPath(S,run)}" stroke-width="${2.2*px}" stroke-dasharray="${6*px} ${4*px}" style="fill:none"/>`;
+      if(pv.side<0) h+=`<path class="hl" d="${pathD(P,true)}" stroke-width="${1.6*px}" style="fill:none"/>`; // the outline after it recedes
+      const S=seamPoly(sh,P); if(S) h+=pv.side<0?`<path class="hl" d="${polyD(S)}" stroke-width="${1.6*px}" stroke-dasharray="${6*px} ${4*px}" style="fill:none"/>`:`<path class="hl" d="${runPath(S,run)}" stroke-width="${2.2*px}" stroke-dasharray="${6*px} ${4*px}" style="fill:none"/>`;
       h+=olabel(m.x,m.y-10*px,`${fmt(a,2)}${b!==a?' → '+fmt(b,2):''} cm · ${pv.side<0?'para dentro':'para fora'}${run.length>1?' · curva inteira':''}`,px)}}
   if(tool==='tape'){
     const ruler=(a,b,live)=>{const d=dist(a,b);if(d<1e-6)return '';const ux=(b.x-a.x)/d,uy=(b.y-a.y)/d,nx=-uy*5*px,ny=ux*5*px;
@@ -1442,10 +1461,10 @@ function toolPanel(t){
       (segs.length?`<dl class="stats">${segs.map((d,k)=>`<dt>Régua ${k+1}</dt><dd>${fmt(d,2)} cm</dd>`).join('')}${segs.length>1?`<dt><b>Total</b></dt><dd><b>${fmt(segs.reduce((a,b)=>a+b,0),2)} cm</b></dd>`:''}</dl>`:'')+
       hint('Passe o mouse sobre uma linha ou margem para ver a medida. Cada clique cria uma régua emendada na anterior; duplo clique ou <b>Enter</b> termina e <b>Esc</b> apaga as réguas. <b>Adicionar valor</b> põe a última sequência na tabela; <b>Shift+clique</b> numa linha põe o comprimento dela em cada tamanho. Escolha a conta (+ − × ÷) em cada valor e use <b>+ Número</b> para, por exemplo, multiplicar meio decote por 2.')); }
   case 'seam': return sec('Margem de costura',rowI('Inicial:',oNum('seamA',.05,0),'cm')+rowI('Final:',`<input type="number" id="o-seamB" data-opt="seamB" value="${opt.seamB}" step="0.05" min="0" placeholder="igual">`,'cm')+
-      rowI('Acabamento:',oSel('seamCf',[['reto','Reto'],['chanfro','Chanfrado'],['sem','Sem acabamento']]))+
+      rowI('Acabamento:',oSel('seamCf',[['reto','Reto'],['chanfro','Chanfrado'],['sem','Sem acabamento'],['redondo','Redondo']]))+
       (()=>{const sp=pick.seamPiece&&byId(pick.seamPiece);return `<div class="acts" style="display:grid">${btn('seamAll','Aplicar costura em todo o painel','primary',!sp)}${btn('seamRemove','Remover somente a costura','primary',!sp)}${btn('seamHemRemove','Remover costura e bainha','primary',!sp)}${btn('seamDotted',sp&&sp.dotted?'Remover pontilhado do painel':'Aplicar pontilhado ao painel','primary',!sp)}</div>`+
         hint(sp?`Painel: <b>${esc(sp.name||'Molde')}</b>.`:'Os botões acima agem no painel escolhido: clique numa linha ou dentro de um molde.')})()+
-      hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>dentro</b> do molde a margem vai para dentro; <b>fora</b>, vai para fora. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.')+
+      hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>fora</b> do molde a margem vai para fora; <b>dentro</b>, o molde recua (a costura entra) e a linha de corte fica no contorno de antes, como no molde.me. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.')+
       hint('Para tirar a margem de um lado só, clique em cima da <b>linha da margem</b> (o tracejado); ela fica vermelha antes do clique.'));
   case 'safety': { const n=doc.shapes.filter(s=>s.type==='path'&&s.piece&&hasSafety(s)).length;
     return sec('Margem de segurança',rowI('Distância:',oNum('safeD',.05,0),'cm')+
@@ -1951,13 +1970,52 @@ function clickGroup(w){
 function seamRun(sh,i){return runOfSeg(sh,i)}
 // allowance a→b spread along the run by length (b = a when "Final" is empty).
 // A closed curve with no corners has no ends: it goes a (at the clicked line) → b (opposite side) → a, so it never jumps.
+// returns the new point list (an inward allowance changes the outline itself)
 function seamSet(P,run,side,a,b,closed,at){
   const loop=closed&&run.length===P.length; if(loop&&at!=null){const k=run.indexOf(at);if(k>0)run=run.slice(k).concat(run.slice(0,k))}
   const f=u=>a+(b-a)*(loop?1-Math.abs(1-2*u):u);
+  if(side<0&&closed) return recessRun(P,run,f,loop);
   const L=run.map(i=>segLen(P,i,closed)),T=L.reduce((s,v)=>s+v,0)||1; let c=0;
   run.forEach((i,k)=>{const p=P[i],e0=f(c/T),e1=f((c+L[k])/T); c+=L[k];
     p.e=r3(side*e0); if(Math.abs(e1-e0)>1e-6)p.e2=r3(side*e1); else delete p.e2; p.cf=opt.seamCf; delete p.hem});
+  return P;
 }
+// like molde.me, an allowance "para dentro" pulls the stitching line in: the line moves inward by the width and the
+// allowance goes outward from it, so the cutting line stays where the outline was. The ends get a small step:
+// the old corner stays for the next line and a new point starts the recessed one.
+function recessRun(P0,run,f,loop){
+  // fix every curve point's handles first, so the new step points do not bend the curves around them
+  const H={pts:P0.map(p=>({...p})),closed:true};H.pts.forEach((q,k)=>freezeHandles(H,k));const P=H.pts;
+  const n=P.length,last=run[run.length-1],idx=loop?run.slice():[run[0]].concat(run.map(i=>(i+1)%n));
+  const L=run.map(i=>segLen(P,i,true)),T=L.reduce((s,v)=>s+v,0)||1,cum=[0];for(let k=0;k<L.length;k++)cum.push(cum[k]+L[k]);
+  const sg=signedArea(sample({pts:P,closed:true}))>0?1:-1,nrm=(x,y)=>{const l=Math.hypot(x,y)||1;return{x:sg*y/l,y:-sg*x/l}}; // outward normal of a direction
+  const tang=j=>{const k=idx[j],prev=P[(k-1+n)%n],next=P[(k+1)%n],p=P[k];
+    if(p.s&&p.hi&&p.ho&&Math.hypot(p.ho.x-p.hi.x,p.ho.y-p.hi.y)>1e-6)return{x:p.ho.x-p.hi.x,y:p.ho.y-p.hi.y}; // a curve point moves along its own normal (the step at the end is square to the curve)
+    if(!loop&&j===0)return{x:next.x-p.x,y:next.y-p.y};if(!loop&&j===idx.length-1)return{x:p.x-prev.x,y:p.y-prev.y};
+    const a=Math.hypot(p.x-prev.x,p.y-prev.y)||1,b=Math.hypot(next.x-p.x,next.y-p.y)||1;return{x:(p.x-prev.x)/a+(next.x-p.x)/b,y:(p.y-prev.y)/a+(next.y-p.y)/b}};
+  const moved=idx.map((k,j)=>{const t=tang(j),nn=nrm(t.x,t.y),d=f(cum[j]/T),p=P[k];return{...p,x:r3(p.x-nn.x*d),y:r3(p.y-nn.y*d)}});
+  // the handles shrink with the curve (a smaller parallel curve has shorter handles)
+  const sc=(h,s)=>h&&{x:r3(h.x*s),y:r3(h.y*s)};
+  for(let j=0;j<moved.length;j++){const k=idx[j],q=moved[j];
+    if(j<moved.length-1||loop){const j2=(j+1)%moved.length,s=dist(q,moved[j2])/(dist(P[k],P[idx[j2]])||1);if(q.ho)q.ho=sc(q.ho,s)}
+    if(j>0||loop){const j0=(j-1+moved.length)%moved.length,s=dist(q,moved[j0])/(dist(P[k],P[idx[j0]])||1);if(q.hi)q.hi=sc(q.hi,s)}}
+  const Z={x:0,y:0};
+  // allowance (outward, same width) on the recessed segments
+  const setE=(q,j)=>{const e0=f(cum[j]/T),e1=f(cum[j+1]/T);q.e=r3(e0);if(Math.abs(e1-e0)>1e-6)q.e2=r3(e1);else delete q.e2;q.cf=opt.seamCf;delete q.hem};
+  if(loop){const out=P.slice();run.forEach((k,j)=>{out[k]=moved[j];setE(out[k],j)});return out}
+  const out=[];
+  for(let k=0;k<n;k++){
+    if(run.slice(1).includes(k)){const j=run.indexOf(k);const q=moved[j];setE(q,j);out.push(q);continue}
+    if(k===(last+1)%n){const q=moved[moved.length-1];q.e=0;delete q.e2;delete q.hem;q.c=true;q.rs=1;if(q.s)q.ho=Z;out.push(q);const p={...P[k]};if(p.s)p.hi=Z;out.push(p);continue}   // straight step back to the old point
+    const p=P[k];
+    if(k===run[0]){const s={...p,e:0};delete s.e2;delete s.hem;if(s.s)s.ho=Z;out.push(s);const q=moved[0];setE(q,0);q.c=true;q.rs=1;if(q.s)q.hi=Z;out.push(q);continue}
+    out.push(p)}
+  // a point with recessed lines on both sides (now or from an earlier click) recedes too, like in molde.me:
+  // its two steps (marked rs) collapse into one recessed point
+  for(let k=0;k<out.length&&out.length>3;k++){const m=out.length,ia=(k-1+m)%m,ib=(k+1)%m,a=out[ia],p=out[k],b=out[ib];
+    if(a.rs&&b.rs&&!p.rs&&dist(a,p)<5&&dist(b,p)<5){const q={...b,x:r3((a.x+b.x)/2),y:r3((a.y+b.y)/2),hi:a.hi};delete q.rs;
+      out[ib]=q;out.splice(Math.max(ia,k),1);out.splice(Math.min(ia,k),1);k=-1}}
+  return out}
 function runPath(S,run){const set=new Set(run),n=S.length;let d='';for(let j=0;j<n;j++)if(set.has(S[j].seg)){const q=S[(j+1)%n];d+=`M${S[j].x} ${S[j].y}L${q.x} ${q.y}`}return d}
 // seam tool: the side (inside/outside the piece) follows the cursor
 function seamHover(w){
@@ -1974,7 +2032,7 @@ function clickSeam(w){
   const h=seamHover(w), a=+opt.seamA||0, b=opt.seamB===''||opt.seamB==null?null:+opt.seamB;
   if(h&&h.remove){const sh=byId(h.id);if(sh.locked)return toast('Molde travado');
     const run=seamRun(sh,h.i);mutate(()=>run.forEach(i=>{const p=sh.pts[i];p.e=0;delete p.e2;delete p.cf;delete p.hem}));pick.seamPiece=h.id;pick.seamPrev=null;renderPanel();toast(run.length>1?'Margem removida da curva':'Margem removida deste lado');return}
-  if(h){const sh=byId(h.id);mutate(()=>seamSet(sh.pts,seamRun(sh,h.i),h.side,a,b==null?a:b,sh.closed,h.i));
+  if(h){const sh=byId(h.id);mutate(()=>{sh.pts=seamSet(sh.pts,seamRun(sh,h.i),h.side,a,b==null?a:b,sh.closed,h.i)});if(h.side<0)toast('Margem para dentro: o molde recua e a linha de corte fica no contorno');
     pick.seamPiece=h.id;pick.seamSide=h.side;renderPanel();
     toast(`Margem de ${fmt(a,2)}${b!=null&&b!==a?' → '+fmt(b,2):''} cm ${h.side<0?'para dentro':'para fora'}`);return}
   const pc=pieceAt(w,x=>x.closed&&x.piece);
@@ -2739,7 +2797,7 @@ function exportDXF(){
   add(0,'SECTION',2,'HEADER',9,'$INSUNITS',70,4,0,'ENDSEC',0,'SECTION',2,'ENTITIES');
   for(const s of doc.shapes){
     if(s.type==='path'){ if(s.piece&&s.closed){const S=seamPoly(s),cutOnSeam=S&&(!XO||XO.margem);poly(cutOnSeam?sample(s):withContinuousNotches(s,sample(s)),true,'CONTORNO');if(cutOnSeam)poly(withContinuousNotches(s,S),true,'COSTURA');const b=boxOf(s.pts),nm=!XO||XO.nome?(s.name||'Molde'):'',tx=!XO||XO.textos?'cortar '+(s.qtd||1)+'x'+(s.fold?' na dobra':''):'',lb=[nm,tx].filter(Boolean).join(' - ');if(lb)text(b.x+b.w/2,b.y+b.h/2,s.labelSize||1.4,lb,'TEXTO');
-        const G=grainGeom(s);if(!s.grainHide)line({x:G.x1,y:G.y1},{x:G.x2,y:G.y2},'FIO');
+        const G=grainGeom(s,lb?.932*(+s.labelSize||1.4):0);if(!s.grainHide)line({x:G.x1,y:G.y1},{x:G.x2,y:G.y2},'FIO');
         if(hasGrade(s))for(const z of doc.sizes)if(!z.base){const P=gradedPts(s,z),nm=ascii(z.name).replace(/\s+/g,'_');poly(sample({...s,pts:P}),true,'TAM_'+nm);const SP=seamPoly(s,P);if(SP&&(!XO||XO.margem))poly(SP,true,'COSTURA_TAM_'+nm)}}
       else if(!XO||XO.tracejadas||s.parent) poly(sample(s),s.closed,s.parent?'INTERNAS':'CONSTRUCAO'); }
     else if(s.type==='notch'&&s.icon==='continuo'){} // already cut into the outline
@@ -2900,7 +2958,7 @@ function nestToDoc(){const R=nestRes;if(!R)return;const src=doc,nd=newDoc({nome:
       if(cp.fold&&!R.folded){const fe=foldEdge(cp);if(fe)unfoldAt(cp,fe.i)}
       xform(new Set([cp.id]),f,{vec,grain:g=>(pl.o.mx<0?180-g:pl.o.my<0?-g:g)+pl.o.th*180/Math.PI});doc=src}}
   lib.docs[nd.id]=nd;$('#nestModal').hidden=true;openDoc(nd.id);toast('Encaixe aberto como molde: imprima em Plotter ou exporte em DXF')}
-/* print: tiled PDF in real scale, pages numbered column-row */
+/* print: tiled PDF in real scale, pages numbered row-column from the project corner */
 const PAPER={a4:[21,29.7,'A4'],a3:[29.7,42,'A3'],a2:[42,59.4,'A2'],a1:[59.4,84.1,'A1'],a0:[84.1,118.9,'A0'],a5:[14.8,21,'A5'],
   letter:[21.59,27.94,'Carta'],legal:[21.59,35.56,'Ofício'],tabloid:[27.94,43.18,'Tabloide']};
 const PR={nome:true,textos:true,margem:true,brancas:false,tracejadas:false,base:false,paper:'a4',custom:false,m:{t:.5,r:.5,b:.5,l:.5},orient:'p',roll:91.4,cw:50,ch:70};
@@ -2923,10 +2981,14 @@ function printPlan(){
   const m=prMargins(), ps=pageSize(b,m), W=ps.W, H=ps.H;
   const tw=W-m.l-m.r, th=H-m.t-m.b; if(tw<2||th<2) return {bad:true};
   if(Math.max(W,H)>500) return {bad:true,big:true};
-  const cols=Math.ceil(b.w/tw-1e-9), rows=Math.ceil(b.h/th-1e-9);
+  // sheets of paper are counted from the project's corner (0,0), like molde.me, so a sheet always shows the same
+  // part of the project; plotter and total pages start at the moldes
+  const grid=PR.paper!=='plot'&&PR.paper!=='total', ax=grid?b.x-((b.x%tw)+tw)%tw:b.x, ay=grid?b.y-((b.y%th)+th)%th:b.y;
+  const c0=Math.round(ax/tw), r0=Math.round(ay/th);
+  const cols=Math.ceil((b.x+b.w-ax)/tw-1e-9), rows=Math.ceil((b.y+b.h-ay)/th-1e-9);
   const boxes=printBoxes(); const tiles=[];
-  for(let c=0;c<cols;c++)for(let r=0;r<rows;r++){const tx=b.x+c*tw,ty=b.y+r*th;
-    const used=boxes.some(q=>q.x<tx+tw&&q.x+q.w>tx&&q.y<ty+th&&q.y+q.h>ty); tiles.push({c,r,tx,ty,used})}
+  for(let c=0;c<cols;c++)for(let r=0;r<rows;r++){const tx=ax+c*tw,ty=ay+r*th;
+    const used=boxes.some(q=>q.x<tx+tw&&q.x+q.w>tx&&q.y<ty+th&&q.y+q.h>ty); tiles.push({c,r,tx,ty,used,lbl:`${r0+r+1}-${c0+c+1}`})}
   return {b,W,H,m,tw,th,cols,rows,tiles,name:ps.name};
 }
 function printBoxes(){return doc.shapes.filter(s=>s.type!=='image'&&!(s.type==='path'&&!s.piece&&!s.parent)&&s.type!=='point').map(s=>{
@@ -2965,30 +3027,35 @@ $('#prCustom').addEventListener('change',e=>{PR.custom=e.target.checked;savePR()
 document.querySelectorAll('input[name="prOr"]').forEach(r=>r.addEventListener('change',()=>{if(r.checked){PR.orient=r.value;savePR();updPrint()}}));
 $('#prHelp').addEventListener('click',()=>{const t=$('#prHelpText');t.hidden=!t.hidden});
 function hexRGB(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]}
+const LW=2.54/72, D3=[3*LW,3*LW], PURPLE=[95,80,140];   // 1 pt in cm; molde.me's dash and label colour
 function drawPDF(pdf,ox,oy){
   const X=x=>x+ox,Y=y=>y+oy,PT=cm=>cm/2.54*72;
   const poly=(P,closed)=>{if(!P||P.length<2)return;pdf.moveTo(X(P[0].x),Y(P[0].y));for(let i=1;i<P.length;i++)pdf.lineTo(X(P[i].x),Y(P[i].y));if(closed)pdf.lineTo(X(P[0].x),Y(P[0].y));pdf.stroke()};
   const line=(a,b)=>pdf.line(X(a.x),Y(a.y),X(b.x),Y(b.y));
-  const ink=()=>{pdf.setDrawColor(17,17,17);pdf.setTextColor(17,17,17);pdf.setLineDashPattern([],0)};
+  const ink=()=>{pdf.setDrawColor(0,0,0);pdf.setTextColor(0,0,0);pdf.setLineDashPattern([],0)};
   for(const s of doc.shapes){
     ink();
     if(s.type==='path'){
       if(!s.piece){ if(s.parent){pdf.setLineWidth(.02);poly(sample(s),s.closed)} continue; }
       if(!s.closed) continue;
-      if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(.018); const P=gradedPts(s,z); poly(sample({...s,pts:P}),true); if(PR.margem){const SP=seamPoly(s,P);if(SP){pdf.setLineWidth(.012);pdf.setLineDashPattern([.25,.15],0);poly(SP,true);pdf.setLineDashPattern([],0)}}
-        if(PR.textos){const b=boxOf(sample({...s,pts:P}));pdf.setTextColor(r,g,bl);pdf.setFontSize(PT(.6));pdf.setFont('helvetica','normal');pdf.text(z.name,X(b.x+b.w+.25),Y(b.y+b.h))} }
+      // like molde.me: 1 pt lines, the cutting line (allowance) solid and the stitching line (the molde) dashed 3 pt
+      if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(LW); const P=gradedPts(s,z),SP=PR.margem?seamPoly(s,P):null;
+        if(SP){poly(SP,true);pdf.setLineDashPattern(D3,0)} poly(sample({...s,pts:P}),true); pdf.setLineDashPattern([],0);
+        if(PR.textos){const b=boxOf(sample({...s,pts:P}));pdf.setTextColor(r,g,bl);pdf.setFontSize(PT(.6));pdf.setFont('courier','normal');pdf.text(z.name,X(b.x+b.w+.25),Y(b.y+b.h))} }
       ink();
-      if(PR.margem){const S=seamPoly(s);if(S){pdf.setDrawColor(192,57,43);pdf.setLineWidth(.015);pdf.setLineDashPattern([.25,.15],0);poly(S,true);ink()}
+      const S=PR.margem?seamPoly(s):null;
+      if(PR.margem){if(S){pdf.setLineWidth(LW);poly(S,true)}
         const n=s.pts.length,sg=orientSign(s); s.pts.forEach((p,i)=>{if(!p.hem||(+p.hem.n||1)<2)return;const q=s.pts[(i+1)%n],dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,nx=sg*dy/l,ny=-sg*dx/l;
-          pdf.setDrawColor(192,57,43);pdf.setLineWidth(.012);pdf.setLineDashPattern([.4,.1,.1,.1],0);for(let k=1;k<+p.hem.n;k++)line({x:p.x+nx*p.hem.w*k,y:p.y+ny*p.hem.w*k},{x:q.x+nx*p.hem.w*k,y:q.y+ny*p.hem.w*k});ink()})}
-      pdf.setLineWidth(.028); if(s.dotted)pdf.setLineDashPattern([.06,.12],0); poly(sample(s),true); pdf.setLineDashPattern([],0);
-      // grain line
-      const G=grainGeom(s),{cx,cy,ux,uy,ah}=G,p1={x:G.x1,y:G.y1},p2={x:G.x2,y:G.y2};
-      if(!s.grainHide){pdf.setLineWidth(.02); line(p1,p2);
-        for(const [p,vx,vy] of (!!s.grainBoth?[[p2,ux,uy],[p1,-ux,-uy]]:[[p2,ux,uy]])){line(p,{x:p.x-vx*ah-vy*ah*.45,y:p.y-vy*ah+vx*ah*.45});line(p,{x:p.x-vx*ah+vy*ah*.45,y:p.y-vy*ah-vx*ah*.45})}}
-      // labels
-      const fs=+s.labelSize||1.4, vert=Math.abs(uy)>.5, tx=vert?cx+fs*.6:cx, ty=vert?cy-fs*.6:cy-fs*1.1, al=vert?'left':'center';
-      let yy=ty; for(const Ln of pieceLines(s,{nome:PR.nome,textos:PR.textos,base:PR.base})){pdf.setFont('helvetica',Ln.b?'bold':'normal');pdf.setFontSize(PT(fs*Ln.k));pdf.text(String(Ln.t),X(tx),Y(yy),{align:al});yy+=fs*Math.max(Ln.k,.72)*1.2}
+          pdf.setLineWidth(LW/2);pdf.setLineDashPattern([.4,.1,.1,.1],0);for(let k=1;k<+p.hem.n;k++)line({x:p.x+nx*p.hem.w*k,y:p.y+ny*p.hem.w*k},{x:q.x+nx*p.hem.w*k,y:q.y+ny*p.hem.w*k});ink()})}
+      pdf.setLineWidth(LW); if(s.dotted)pdf.setLineDashPattern([.06,.12],0);else if(S)pdf.setLineDashPattern(D3,0); poly(sample(s),true); pdf.setLineDashPattern([],0);
+      // grain line and texts (purple, monospaced, the name along the grain)
+      const LY=labelLayout(s,pieceLines(s,{nome:PR.nome,textos:PR.textos,base:PR.base})),fs=LY.fs,G=LY.G,{ux,uy,ah}=G,p1={x:G.x1,y:G.y1},p2={x:G.x2,y:G.y2},w=ah*.577;
+      pdf.setDrawColor(...PURPLE);pdf.setTextColor(...PURPLE);
+      if(!s.grainHide){pdf.setLineWidth(LW); line(p1,p2);
+        for(const [p,vx,vy] of (!!s.grainBoth?[[p2,ux,uy],[p1,-ux,-uy]]:[[p2,ux,uy]])){line({x:p.x-vx*ah-vy*w,y:p.y-vy*ah+vx*w},p);line(p,{x:p.x-vx*ah+vy*w,y:p.y-vy*ah-vx*w})}}
+      for(const it of LY.items){pdf.setFont('courier','normal');pdf.setFontSize(PT(it.size));const tw=pdf.getTextWidth(it.t);
+        pdf.text(it.t,X(it.x-it.tx*tw/2),Y(it.y-it.ty*tw/2),it.ang?{angle:-it.ang}:undefined)}
+      ink();
       if(PR.textos){
         const fe=s.fold?foldEdge(s):null; if(fe){const p=s.pts[fe.i],q=s.pts[(fe.i+1)%s.pts.length],my=(p.y+q.y)/2,x=fe.X+(fe.side==='min'?1:-1)*fs*.75;
           pdf.setFontSize(PT(fs*.7));const w=pdf.getTextWidth('DOBRA');pdf.text('DOBRA',X(x+fs*.25),Y(my+w/2),{angle:90})}}
@@ -3016,14 +3083,11 @@ function buildPDF(J,p,tiles){
   tiles.forEach((t,k)=>{
     if(k) pdf.addPage(fmtP,p.W>p.H?'landscape':'portrait');
     pdf.saveGraphicsState(); pdf.rect(p.m.l,p.m.t,p.tw,p.th,null); pdf.clip(); pdf.discardPath();
-    drawPDF(pdf,p.m.l-t.tx,p.m.t-t.ty);
+    SAMPLE_K=4; try{drawPDF(pdf,p.m.l-t.tx,p.m.t-t.ty)}finally{SAMPLE_K=1}
     pdf.restoreGraphicsState();
-    if(PR.tracejadas){pdf.setDrawColor(140,140,140);pdf.setLineWidth(.01);pdf.setLineDashPattern([.3,.2],0);pdf.rect(p.m.l,p.m.t,p.tw,p.th,'S');pdf.setLineDashPattern([],0)}
-    const lbl=`${t.c+1}-${t.r+1}`, bx=p.m.l+p.tw-.15, by=p.m.t+p.th-.2;
-    pdf.setFont('helvetica','bold');pdf.setFontSize(11);const w=pdf.getTextWidth(lbl);
-    pdf.setFillColor(255,255,255);pdf.rect(bx-w-.15,by-.45,w+.3,.6,'F');pdf.setTextColor(17,17,17);pdf.text(lbl,bx,by,{align:'right'});
-    pdf.setFont('helvetica','normal');pdf.setFontSize(6);pdf.setTextColor(110,110,110);
-    pdf.text(`${doc.meta.nome} · folha ${lbl} (coluna ${t.c+1}, linha ${t.r+1}) de ${p.cols}×${p.rows} · escala real 100%`,p.m.l+.15,p.m.t+p.th-.2);
+    // like molde.me: sheet edge dashed 5 pt (½ pt line) and the number linha-coluna at the top left
+    if(PR.tracejadas){pdf.setDrawColor(0,0,0);pdf.setLineWidth(LW/2);pdf.setLineDashPattern([5*LW,5*LW],0);pdf.rect(p.m.l,p.m.t,p.tw,p.th,'S');pdf.setLineDashPattern([],0)}
+    pdf.setFont('courier','normal');pdf.setFontSize(12);pdf.setTextColor(...PURPLE);pdf.text(t.lbl,p.m.l+.2,p.m.t+.581);
   });
   download(safeName()+'-molde.pdf',pdf.output('blob'),'application/pdf');
   $('#printModal').hidden=true;
