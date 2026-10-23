@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 </head>
 <body>
 <title>Ateliê de Moldes Gleici Costuras</title>
@@ -599,6 +599,11 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 <script>
 (function(){
 'use strict';
+// phone keyboard: shrink the page instead of panning it (a pan could stay stuck after the keyboard closed)
+(()=>{let m=document.querySelector('meta[name="viewport"]');
+  if(!m){m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m)}
+  if(!/interactive-widget/.test(m.content))m.content+=',interactive-widget=resizes-content'})();
+const VERSION='2026.10.22-3'; // shown under "Meus moldes" so a cached old copy is easy to spot
 const PXCM=96/2.54, NS='http://www.w3.org/2000/svg', STORE='atelie-moldes-v1', OPTKEY='atelie-moldes-opts';
 const $=s=>document.querySelector(s);
 const app=$('#app'), svg=$('#cv'), panelBody=$('#panelBody'), stage=$('#stage');
@@ -1227,10 +1232,16 @@ addEventListener('resize',()=>{if(uiPref==='auto')applyUI();const ls=innerWidth>
 // the phone keyboard can scroll the page or the layout boxes to reveal a field; put everything back once it is gone
 function unshift(){let moved=false;
   for(const el of [document.documentElement,document.body,app,$('.main'),stage]) if(el&&(el.scrollTop||el.scrollLeft)){el.scrollTop=0;el.scrollLeft=0;moved=true}
-  if(scrollX||scrollY){scrollTo(0,0);moved=true} if(moved) render()}
+  const vv=window.visualViewport; // a pan left behind by the keyboard (not a pinch zoom)
+  if(scrollX||scrollY||(vv&&vv.scale<1.02&&(vv.offsetTop>1||vv.offsetLeft>1))){scrollTo(0,0);moved=true} if(moved) render()}
 const typing=()=>{const a=document.activeElement;return a&&a.matches('input,select,textarea')};
 document.addEventListener('focusout',()=>setTimeout(()=>{if(!typing())unshift()},120));
-if(window.visualViewport) visualViewport.addEventListener('resize',()=>setTimeout(()=>{if(!typing())unshift();render()},150));
+if(window.visualViewport){
+  visualViewport.addEventListener('resize',()=>setTimeout(()=>{if(!typing())unshift();render()},150));
+  visualViewport.addEventListener('scroll',()=>{if(!typing())setTimeout(unshift,150)});
+  // the keyboard may finish closing after the field lost focus: check once more a bit later
+  document.addEventListener('focusout',()=>setTimeout(()=>{if(!typing())unshift()},600));
+}
 const MORE=[['zin','Mais zoom','zin'],['zout','Menos zoom','zout'],['fitv','Ajustar à tela','fit'],['z100','Tamanho real','measures'],
   ['snap','Ímã','snap'],['guides','Guias','guides'],['grid','Grade','grid'],['measures','Mostrar medidas','measures'],['hidePts','Esconder pontos','hidePts'],
   ['smooth','Suavizar curvas','smooth'],['rotate','Rotacionar','rotate'],['flipV','Inverter na vertical','flipV'],
@@ -2209,7 +2220,7 @@ function renderDrawer(){
   const docs=Object.values(lib.docs).sort((a,b)=>(b.updated||0)-(a.updated||0));
   $('#dlist').innerHTML=docs.map(d=>`<div class="ditem${d.id===doc.id?' cur':''}"><button class="open" data-open="${d.id}">${esc(d.meta.nome)}</button>
     <small>${esc(d.meta.tecido||'Sem tecido')} · ${d.shapes.filter(s=>s.piece).length} moldes · ${new Date(d.updated||Date.now()).toLocaleDateString('pt-BR')}</small>
-    <div class="acts"><button class="mini" data-deldoc="${d.id}">Excluir</button></div></div>`).join('');
+    <div class="acts"><button class="mini" data-deldoc="${d.id}">Excluir</button></div></div>`).join('')+`<p class="hint" style="text-align:center;margin:14px 0 4px">Versão ${VERSION}</p>`;
   $('#dlist').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{openDoc(b.dataset.open);app.classList.remove('drawer-open')});
   $('#dlist').querySelectorAll('[data-deldoc]').forEach(b=>b.onclick=()=>{if(b.dataset.confirm){const id=b.dataset.deldoc;delete lib.docs[id];
       if(id===doc.id){const rest=Object.keys(lib.docs);if(rest.length)openDoc(rest[0]);else{const d=newDoc({nome:'Sem título'});lib.docs[d.id]=d;openDoc(d.id)}}save();renderDrawer()}
