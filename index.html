@@ -116,6 +116,8 @@ image.locked{pointer-events:none}
 #gOver .h{pointer-events:all;cursor:move}
 .rzb{fill:none;stroke:var(--hl);stroke-linecap:round;stroke-linejoin:round}
 #gOver .rzh{fill:transparent;pointer-events:all}
+#gOver .roth{fill:transparent;pointer-events:all;cursor:grab}
+#gOver .roth.piv{cursor:move}
 #gOver [data-rz="nw"],#gOver [data-rz="se"]{cursor:nwse-resize}
 #gOver [data-rz="ne"],#gOver [data-rz="sw"]{cursor:nesw-resize}
 #gOver [data-rz="n"],#gOver [data-rz="s"]{cursor:ns-resize}
@@ -637,7 +639,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 (()=>{let m=document.querySelector('meta[name="viewport"]');
   if(!m){m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m)}
   if(!/interactive-widget/.test(m.content))m.content+=',interactive-widget=resizes-content'})();
-const VERSION='2026.10.24-5'; // shown under "Meus moldes" so a cached old copy is easy to spot
+const VERSION='2026.10.24-6'; // shown under "Meus moldes" so a cached old copy is easy to spot
 const PXCM=96/2.54, NS='http://www.w3.org/2000/svg', STORE='atelie-moldes-v1', OPTKEY='atelie-moldes-opts';
 const $=s=>document.querySelector(s);
 const app=$('#app'), svg=$('#cv'), panelBody=$('#panelBody'), stage=$('#stage');
@@ -656,6 +658,7 @@ let tape={items:[]};
 let tapeCur=null, tapeChains=[], tapeHover=null; // ruler chains drawn with the tape tool
 const pointers=new Map(); let pinch=null;
 let resizeMode=false; // top-bar "Redimensionar" toggles drag handles around the selection
+let rotMode=false, rotPiv=null, rotGrp=null; // top-bar "Rotacionar": corner arcs and a movable axis (rotPiv) like molde.me; rotGrp = turned box of a multi-selection
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
 const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genGrainA:0,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
@@ -808,10 +811,13 @@ function signedArea(P){let a=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1
 function polyLen(P,closed){let l=0;for(let i=1;i<P.length;i++)l+=dist(P[i-1],P[i]);if(closed&&P.length>1)l+=dist(P[P.length-1],P[0]);return l}
 function boxOf(P){let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of P){if(p.x<x0)x0=p.x;if(p.y<y0)y0=p.y;if(p.x>x1)x1=p.x;if(p.y>y1)y1=p.y}return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
 function unionBox(bs){bs=bs.filter(b=>b&&isFinite(b.x));if(!bs.length)return null;let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const b of bs){x0=Math.min(x0,b.x);y0=Math.min(y0,b.y);x1=Math.max(x1,b.x+b.w);y1=Math.max(y1,b.y+b.h)}return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
+// corners of a text's box, turned by its rotation (rotNow, degrees, around the text's anchor)
+function textCorners(s){const w=Math.max(.5,s.size*.56*String(s.text).length),h=s.size*1.25,a=(+s.rotNow||0)*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
+  return [[0,-s.size],[w,-s.size],[w,h-s.size],[0,h-s.size]].map(([dx,dy])=>({x:s.x+dx*co-dy*si,y:s.y+dx*si+dy*co}))}
 function shapeBox(s){
   if(s.type==='path') return boxOf(sample(s));
   if(s.type==='image') return {x:s.x,y:s.y,w:s.w,h:s.h};
-  if(s.type==='text') return {x:s.x,y:s.y-s.size,w:Math.max(.5,s.size*.56*String(s.text).length),h:s.size*1.25};
+  if(s.type==='text') return boxOf(textCorners(s));
   return {x:s.x-.3,y:s.y-.3,w:.6,h:.6};
 }
 function segLen(pts,i,closed){const c=segCtrl(pts,i,closed);if(straight(pts,i))return dist(c[0],c[3]);let l=0,p=c[0];for(let k=1;k<=48;k++){const q=bez(c,k/48);l+=dist(p,q);p=q}return l}
@@ -950,6 +956,8 @@ function xform(ids,f,o={}){
     else if(s.type==='notch'){const q=f(s),q2=f({x:s.x+Math.cos(s.a),y:s.y+Math.sin(s.a)});s.a=Math.atan2(q2.y-q.y,q2.x-q.x);s.x=r3(q.x);s.y=r3(q.y)}
     else if(s.type==='image'){ if(o.scale){s.w*=o.scale.sx;s.h*=o.scale.sy;const q=f({x:s.x,y:s.y});s.x=q.x;s.y=q.y} else {const c=f({x:s.x+s.w/2,y:s.y+s.h/2});s.x=c.x-s.w/2;s.y=c.y-s.h/2} }
     else { const q=f(s);s.x=r3(q.x);s.y=r3(q.y); if(s.type==='text'&&o.scale) s.size=r3(s.size*Math.sqrt(o.scale.sx*o.scale.sy)); }
+    // the accumulated rotation (panel ↻ field, rotated text, the turned box of the rotate handles)
+    if(o.rotF&&(s.type==='path'||s.type==='text')){const r=((o.rotF(+s.rotNow||0)%360)+540)%360-180;s.rotNow=Math.abs(r)<1e-9?0:Math.round(r*1000)/1000}
   }
 }
 function translate(ids,d){xform(ids,p=>({x:p.x+d.x,y:p.y+d.y}))}
@@ -1159,7 +1167,7 @@ function shapesSVG(px,exp){
     } else if(sh.type==='mark'){ h+=markSVG(sh,px,exp,on);
     } else if(sh.type==='point'){ const r=exp?.12:3.2*px; const m=`<path class="${C('ptm')}" d="M${sh.x-r} ${sh.y-r}h${2*r}v${2*r}h${-2*r}z" stroke-width="${px*1.2}" style="fill:none"/>`;   // a small square, like molde.me
       h+=exp?m:`<g data-id="${sh.id}" class="${on?'sel':''}"><circle class="hitf" cx="${sh.x}" cy="${sh.y}" r="${9*px}"/>${m}</g>`;
-    } else if(sh.type==='text'){ if(!exp&&textEd&&textEd.id===sh.id) continue; if(exp&&XO&&!XO.textos) continue; h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}">${esc(sh.text)}</text>`; }
+    } else if(sh.type==='text'){ if(!exp&&textEd&&textEd.id===sh.id) continue; if(exp&&XO&&!XO.textos) continue; h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}"${+sh.rotNow?` transform="rotate(${+sh.rotNow} ${sh.x} ${sh.y})"`:''}>${esc(sh.text)}</text>`; }
   }
   return h;
 }
@@ -1283,6 +1291,17 @@ function renderOverlay(vw,vh){
     h+=`<path class="rzb" d="${br(x0,y0,1,1)+br(x1,y0,-1,1)+br(x1,y1,-1,-1)+br(x0,y1,1,-1)}M${xm-L/2} ${y0}h${L}M${xm-L/2} ${y1}h${L}M${x0} ${ym-L/2}v${L}M${x1} ${ym-L/2}v${L}" stroke-width="${3*px}"/>`;
     const hs=11*px*T();for(const [k,x,y] of [['nw',x0,y0],['n',xm,y0],['ne',x1,y0],['e',x1,ym],['se',x1,y1],['s',xm,y1],['sw',x0,y1],['w',x0,ym]])h+=`<rect class="rzh" data-rz="${k}" x="${x-hs}" y="${y-hs}" width="${2*hs}" height="${2*hs}"/>`;
     if(drag&&drag.kind==='resize')h+=olabel(xm,y0-12*px,`${fmt(u.w)} × ${fmt(u.h)} cm`,px)}}
+  // rotate: an arc outside each corner of the turned box, and the axis (a cross that can be dragged)
+  if(rotMode&&tool==='select'&&ss.length){const F=rotFrame();if(F){
+    const R=13*px*T(),g=6*px*T();let d='';
+    for(const q of F.corners){const dx=q.x-F.c.x,dy=q.y-F.c.y,l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l,cx=q.x+ux*g,cy=q.y+uy*g,a=Math.atan2(uy,ux);
+      const p0={x:cx+Math.cos(a-.8)*R,y:cy+Math.sin(a-.8)*R},p1={x:cx+Math.cos(a+.8)*R,y:cy+Math.sin(a+.8)*R};
+      d+=`M${p0.x} ${p0.y}A${R} ${R} 0 0 1 ${p1.x} ${p1.y}`;
+      h+=`<circle class="roth" data-rot="1" cx="${cx+ux*R*.6}" cy="${cy+uy*R*.6}" r="${12*px*T()}"/>`}
+    h+=`<path class="rzb" d="${d}" stroke-width="${3*px}" style="fill:none"/>`;
+    const p=F.piv,s=7*px*T(),k=2*px*T();
+    h+=`<path class="rzb" d="M${p.x-s} ${p.y}Q${p.x-k} ${p.y-k} ${p.x} ${p.y-s}Q${p.x+k} ${p.y-k} ${p.x+s} ${p.y}Q${p.x+k} ${p.y+k} ${p.x} ${p.y+s}Q${p.x-k} ${p.y+k} ${p.x-s} ${p.y}z" stroke-width="${1.5*px}" style="fill:var(--hl)"/><circle class="roth piv" data-piv="1" cx="${p.x}" cy="${p.y}" r="${11*px*T()}"/>`;
+    if(drag&&drag.kind==='rotate')h+=olabel(p.x,p.y-16*px,`${fmt(drag.ang,1)}°`,px)}}
   // tool-specific vertex handles
   if(tool==='safety'){
     for(const sh of doc.shapes) if(sh.type==='path'&&sh.piece&&sh.closed&&!sh.hidden){const C=cutPoly(sh);if(C)h+=`<path class="safehl" d="${polyD(C)}" stroke-width="${2.4*px}" opacity=".55"/>`}
@@ -1646,7 +1665,7 @@ function panelPath(s){
 }
 function panelImage(s){return sec('Imagem de fundo',`${rowI('Largura:',`<input type="number" id="i-w" data-k="w" value="${r3(s.w)}" step="0.5" min="0.5">`,'cm')}${rowI('Opacidade:',`<input type="number" id="i-op" data-k="opacity" value="${s.opacity??.6}" min="0.1" max="1" step="0.1">`)}
   <div class="acts">${btn('digOpen','Calibrar e contornar','primary')}${btn('del','Remover','danger')}</div>`+hint('Imagens travadas não podem ser clicadas. Destrave pela lista de imagens, com nada selecionado.'))}
-function panelText(s){return sec('Texto',`<label class="fld"><span>Texto</span><input id="t-text" data-k="text" value="${esc(s.text)}"></label>${rowI('Tamanho:',`<select id="t-size" data-k="size">${sizeOpts.map(([v,l])=>`<option value="${v}"${+s.size===v?' selected':''}>${l}</option>`).join('')}</select>`)}<div class="acts">${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)}
+function panelText(s){return sec('Texto',`<label class="fld"><span>Texto</span><input id="t-text" data-k="text" value="${esc(s.text)}"></label>${rowI('Tamanho:',`<select id="t-size" data-k="size">${sizeOpts.map(([v,l])=>`<option value="${v}"${+s.size===v?' selected':''}>${l}</option>`).join('')}</select>`)}${rowI('Rotação:',`<input type="number" step="1" id="t-rot" data-k="rotNow" value="${+s.rotNow||0}">`,'°')}<div class="acts">${btn('dup','Duplicar')}${btn('del','Remover','danger')}</div>`)}
 function panelSmall(s){const n={point:'Ponto',notch:'Pique',mark:'Marcação interna'}[s.type]||'Elemento';
   return sec(n,`${s.type==='notch'&&s.icon==='texto'||s.type==='mark'&&s.icon==='texto'?`<label class="fld"><span>Texto</span><input id="s-text" data-k="text" value="${esc(s.text||'')}"></label>`:''}${s.type==='notch'?rowI('Ícone:',`<select id="s-icon" data-k="icon">${[['tracop','Traço pequeno'],['traco','Traço médio'],['t','T'],['v','V'],['continuo','Pique contínuo'],['seta','Seta'],['texto','Texto']].map(([v,l])=>`<option value="${v}"${s.icon===v?' selected':''}>${l}</option>`).join('')}</select>`)+rowI('Altura:',`<input type="number" id="s-h" data-k="h" value="${s.h||6}" step="1" min="1">`,'mm'):''}
   ${s.type==='mark'?rowI('Ícone:',`<select id="s-icon" data-k="icon">${[['cruz','Cruz'],['circulo','Círculo'],['ponto','Ponto'],['texto','Texto']].map(([v,l])=>`<option value="${v}"${s.icon===v?' selected':''}>${l}</option>`).join('')}</select>`)+rowI('Tamanho:',`<input type="number" id="s-sz" data-k="size" value="${s.size||10}" step="1" min="1">`,'mm'):''}
@@ -1702,6 +1721,7 @@ function setField(el){
   if(k==='lineLen'){if(sh.locked||!(v>0))return;const a=sh.pts[0],b=sh.pts[1],l=dist(a,b)||1;b.x=r3(a.x+(b.x-a.x)*v/l);b.y=r3(a.y+(b.y-a.y)*v/l);return}
   if(k==='bw'||k==='bh'){if(sh.locked||!(v>0))return;const b=boxOf(sh.pts);let sx=k==='bw'?(b.w?v/b.w:1):1,sy=k==='bh'?(b.h?v/b.h:1):1;if(keepRatioOf(sh)){if(k==='bw')sy=sx;else sx=sy}
     xform(new Set([sh.id]),p=>({x:b.x+(p.x-b.x)*sx,y:b.y+(p.y-b.y)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})});return}
+  if(k==='rotNow'&&sh.type==='text'){if(!sh.locked&&isFinite(v))sh.rotNow=v;return}
   if(k==='rotNow'){if(sh.locked)return;const d=v-(sh.rotNow||0),b=boxOf(sh.pts),c={x:b.x+b.w/2,y:b.y+b.h/2},a=d*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
     xform(new Set([sh.id]),p=>({x:c.x+(p.x-c.x)*co-(p.y-c.y)*si,y:c.y+(p.x-c.x)*si+(p.y-c.y)*co}),{grain:g=>g+d,vec:(x,y)=>({x:x*co-y*si,y:x*si+y*co})});sh.rotNow=v;return}
   if(k==='labelSize'||k==='size'||k==='grainA') v=parseFloat(v);
@@ -1720,7 +1740,8 @@ function updateButtons(){
   const has=sel.size>0;
   const set=(id,dis,on)=>{const b=$('#tb-'+id);if(!b)return;if(dis!=null)b.disabled=dis;if(on!=null)b.classList.toggle('on',on)};
   set('undo',!undoS.length);set('redo',!redoS.length);
-  ['rotate','flipV','flipH','lock','del'].forEach(k=>set(k,!has));
+  ['flipV','flipH','lock','del'].forEach(k=>set(k,!has));
+  set('rotate',false,rotMode);
   set('resize',false,resizeMode); const rr=$('#rail-resize'); if(rr) rr.classList.toggle('on',resizeMode);
   set('smooth',!(has||selPoint));
   set('snap',null,snapOn);set('guides',null,guidesOn);set('grid',null,gridOn);set('measures',null,measuresOn);set('hidePts',null,hidePts);
@@ -2329,7 +2350,18 @@ async function autoTrace(){
 /* ---------- actions ---------- */
 function centerOf(b){return{x:b.x+b.w/2,y:b.y+b.h/2}}
 function rotateSel(deg){const b=selBox();if(!b)return;const c=centerOf(b),a=deg*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
-  mutate(()=>xform(new Set(sel),p=>({x:c.x+(p.x-c.x)*co-(p.y-c.y)*si,y:c.y+(p.x-c.x)*si+(p.y-c.y)*co}),{grain:g=>((g+deg)%360+360)%360,vec:(x,y)=>({x:x*co-y*si,y:x*si+y*co})}))}
+  mutate(()=>xform(new Set(sel),p=>({x:c.x+(p.x-c.x)*co-(p.y-c.y)*si,y:c.y+(p.x-c.x)*si+(p.y-c.y)*co}),{grain:g=>((g+deg)%360+360)%360,vec:(x,y)=>({x:x*co-y*si,y:x*si+y*co}),rotF:r=>r+deg}))}
+// turn the shapes ids by deg around c (rotate handles)
+function rotateAround(ids,c,deg){const a=deg*Math.PI/180,co=Math.cos(a),si=Math.sin(a);
+  xform(ids,p=>({x:c.x+(p.x-c.x)*co-(p.y-c.y)*si,y:c.y+(p.x-c.x)*si+(p.y-c.y)*co}),{grain:g=>((g+deg)%360+360)%360,vec:(x,y)=>({x:x*co-y*si,y:x*si+y*co}),rotF:r=>r+deg})}
+// the selection's box turned with it (its corners get the rotate arcs) and the axis
+const selKey=()=>[...sel].sort().join(',');
+function rotFrame(){const ss=selShapes().filter(s=>!s.locked);if(!ss.length)return null;const key=selKey();
+  const ang=ss.length===1?(+ss[0].rotNow||0):(rotGrp&&rotGrp.key===key?rotGrp.ang:0),a=ang*Math.PI/180,co=Math.cos(a),si=Math.sin(a),P=[];
+  for(const s of ss){if(s.type==='path')P.push(...sample(s));else if(s.type==='text')P.push(...textCorners(s));else{const b=shapeBox(s);P.push({x:b.x,y:b.y},{x:b.x+b.w,y:b.y},{x:b.x+b.w,y:b.y+b.h},{x:b.x,y:b.y+b.h})}}
+  const b=boxOf(P.map(p=>({x:p.x*co+p.y*si,y:-p.x*si+p.y*co}))),back=(x,y)=>({x:x*co-y*si,y:x*si+y*co});
+  const corners=[[b.x,b.y],[b.x+b.w,b.y],[b.x+b.w,b.y+b.h],[b.x,b.y+b.h]].map(([x,y])=>back(x,y)),c=back(b.x+b.w/2,b.y+b.h/2);
+  return {key,ang,corners,c,piv:rotPiv&&rotPiv.key===key?{x:rotPiv.x,y:rotPiv.y}:c,ss}}
 function scaleSel(sx,sy){const b=selBox();if(!b)return;mutate(()=>xform(new Set(sel),p=>({x:b.x+(p.x-b.x)*sx,y:b.y+(p.y-b.y)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})}))}
 function applyAutoGrade(sh,ag){
   const b=boxOf(sh.pts),fe=sh.fold?foldEdge(sh):null,ax=fe?fe.X:b.x,ay=b.y;
@@ -2416,15 +2448,16 @@ const ACT={
   smooth(){ if(selPoint){const sh=byId(selPoint.id);mutate(()=>{sh.pts[selPoint.i].s=!sh.pts[selPoint.i].s});return}
     const ps=selShapes().filter(s=>s.type==='path'&&!s.locked); if(!ps.length) return toast('Selecione uma linha ou molde');
     mutate(()=>ps.forEach(sh=>{let P=sh.pts.map(p=>{const q={...p};delete q.hi;delete q.ho;return q});if(P.length>6){const ring=sh.closed?P.concat([P[0]]):P;let R=rdp(ring,.12);if(sh.closed)R=R.slice(0,-1);if(R.length>=(sh.closed?3:2))P=R}sh.pts=markCorners(P,sh.closed,38)}));toast('Curvas suavizadas')},
-  resize(){resizeMode=!resizeMode;if(resizeMode){if(tool!=='select')setTool('select');toast(sel.size?'Arraste as alças laranjas para redimensionar (Shift mantém a proporção)':'Selecione um molde ou forma para redimensionar')}render();updateButtons()},
+  resize(){resizeMode=!resizeMode;if(resizeMode){rotMode=false;if(tool!=='select')setTool('select');toast(sel.size?'Arraste as alças laranjas para redimensionar (Shift mantém a proporção)':'Selecione um molde ou forma para redimensionar')}render();updateButtons()},
   resizeNum(b){if(!sel.size)return;const bx=selBox();showPop(b,`<b>Redimensionar</b>${rowI('Largura:',`<input type="number" id="rzW" step="0.1" value="${r3(bx.w)}">`,'cm')}${rowI('Altura:',`<input type="number" id="rzH" step="0.1" value="${r3(bx.h)}">`,'cm')}<label class="chk"><input type="checkbox" id="rzK" checked> Manter proporção</label>${btn('rzGo','Aplicar','primary block')}`,
     p=>{const W=p.querySelector('#rzW'),H=p.querySelector('#rzH'),K=p.querySelector('#rzK');W.addEventListener('input',()=>{if(K.checked)H.value=r3(bx.h*(+W.value/bx.w))});H.addEventListener('input',()=>{if(K.checked)W.value=r3(bx.w*(+H.value/bx.h))});
       p.querySelector('[data-act="rzGo"]').addEventListener('click',()=>{const sx=bx.w?+W.value/bx.w:1,sy=bx.h?+H.value/bx.h:1;if(sx>0&&sy>0){scaleSel(sx,sy);hidePop()}})})},
-  rotate(b){if(!sel.size)return;showPop(b,`<b>Rotacionar</b>${rowI('Ângulo:',`<input type="number" id="rtA" step="1" value="90">`,'°')}<div class="acts">${btn('r-90','−90°')}${btn('r90','+90°')}${btn('r180','180°')}</div>${btn('rtGo','Aplicar','primary block')}`,
+  rotate(){rotMode=!rotMode;if(rotMode){resizeMode=false;if(tool!=='select')setTool('select');toast(sel.size?'Arraste os arcos dos cantos para girar em volta do eixo (a cruz do centro, que também pode ser arrastada). Shift gira de 15 em 15°':'Selecione um molde, forma ou texto para girar')}render();updateButtons()},
+  rotateNum(b){if(!sel.size)return;showPop(b,`<b>Rotacionar</b>${rowI('Ângulo:',`<input type="number" id="rtA" step="1" value="90">`,'°')}<div class="acts">${btn('r-90','−90°')}${btn('r90','+90°')}${btn('r180','180°')}</div>${btn('rtGo','Aplicar','primary block')}`,
     p=>{p.querySelector('[data-act="r-90"]').onclick=()=>rotateSel(-90);p.querySelector('[data-act="r90"]').onclick=()=>rotateSel(90);p.querySelector('[data-act="r180"]').onclick=()=>rotateSel(180);
       p.querySelector('[data-act="rtGo"]').onclick=()=>{const a=parseFloat(p.querySelector('#rtA').value);if(isFinite(a))rotateSel(a)}})},
-  flipV(){const b=selBox();if(!b)return;const cy=b.y+b.h/2;mutate(()=>xform(new Set(sel),p=>({x:p.x,y:2*cy-p.y}),{grain:g=>-g,vec:(x,y)=>({x,y:-y})}))},
-  flipH(){const b=selBox();if(!b)return;const cx=b.x+b.w/2;mutate(()=>xform(new Set(sel),p=>({x:2*cx-p.x,y:p.y}),{grain:g=>180-g,vec:(x,y)=>({x:-x,y})}))},
+  flipV(){const b=selBox();if(!b)return;const cy=b.y+b.h/2;mutate(()=>xform(new Set(sel),p=>({x:p.x,y:2*cy-p.y}),{grain:g=>-g,vec:(x,y)=>({x,y:-y}),rotF:r=>-r}))},
+  flipH(){const b=selBox();if(!b)return;const cx=b.x+b.w/2;mutate(()=>xform(new Set(sel),p=>({x:2*cx-p.x,y:p.y}),{grain:g=>180-g,vec:(x,y)=>({x:-x,y}),rotF:r=>-r}))},
   arrange, lock(){const ss=selShapes();if(!ss.length)return;const all=ss.every(s=>s.locked);mutate(()=>ss.forEach(s=>s.locked=!all));toast(all?'Destravado':'Travado')},
   photo, print(){openPrint()}, del(){ if(selPoint&&tool==='select') return ACT.delPt(); if(!sel.size) return;
     mutate(()=>{const ids=new Set(sel);doc.shapes=doc.shapes.filter(s=>!ids.has(s.id)&&!isChildOf(s,ids));sel.clear();selPoint=null})},
@@ -2432,7 +2465,7 @@ const ACT={
     showPop(b&&b.offsetParent?b:(mobile?$('#moreBtn'):$('#tb-theme')),`<b>Tema</b><div class="themes">${THEMES.map(([k,l,c1,c2])=>`<button type="button" class="themeopt${cur===k?' on':''}" data-th="${k}"><span class="sw2" style="background:linear-gradient(135deg,${c1} 50%,${c2} 50%)"></span>${l}</button>`).join('')}</div>`,
       p=>p.querySelectorAll('[data-th]').forEach(x=>x.onclick=()=>{setTheme(x.dataset.th);hidePop()}))},
   panelToggle(){app.classList.toggle('panel-open');updateChip();if(!app.classList.contains('panel-open')){const a=document.activeElement;if(a&&panelBody.contains(a))a.blur();unshift()}},
-  more(){const needSel=['rotate','flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,grid:gridOn,measures:measuresOn,hidePts,resize:resizeMode};
+  more(){const needSel=['flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,grid:gridOn,measures:measuresOn,hidePts,resize:resizeMode,rotate:rotMode};
     $('#moreGrid').innerHTML=MORE.map(([a,l,i])=>`<button data-m="${a}"${(needSel.includes(a)&&!sel.size)||(a==='smooth'&&!sel.size&&!selPoint)?' disabled':''} class="${on[a]?'on':''}">${ic(i)}<span>${l}</span></button>`).join('');
     $('#moreGrid').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{$('#moreSheet').hidden=true;act(b.dataset.m,$('#moreBtn'))});
     $('#moreSheet').hidden=false},
@@ -2591,6 +2624,10 @@ function onDown(e){
   if(pick.ovl){dropOverlay(w);render();return}
   if(mobile&&e.pointerType==='touch'&&AIM.has(tool)){drag={kind:'aim'};cursorS=snap(w,{temp:true});aimHover(w);render();updateLoupe(e);return}
   const hEl=e.target.closest&&e.target.closest('[data-h]'), sEl=e.target.closest&&e.target.closest('[data-id]');
+  const rt=tool==='select'&&rotMode&&e.target.closest&&e.target.closest('[data-rot],[data-piv]');
+  if(rt){const F=rotFrame();if(F){if(rt.dataset.piv)drag={kind:'pivot',key:F.key};
+      else drag={kind:'rotate',piv:F.piv,key:F.key,ang0:F.ang,multi:F.ss.length>1,a0:Math.atan2(w.y-F.piv.y,w.x-F.piv.x),ids:new Set(F.ss.map(s=>s.id)),s0:snap0(),moved:false,ang:0}}
+    render();return}
   const rz=tool==='select'&&e.target.closest&&e.target.closest('[data-rz]');
   if(rz){drag={kind:'resize',dir:rz.dataset.rz,box:selBox(),ids:new Set([...sel].filter(i=>!byId(i).locked)),s0:snap0(),moved:false};render();return}
   switch(tool){
@@ -2728,6 +2765,9 @@ function onMove(e){
       if(dr.length===2&&e.shiftKey){const s=Math.abs(sx-1)>Math.abs(sy-1)?sx:sy;sx=sy=s}
       const ax=dr.includes('w')?b.x+b.w:b.x,ay=dr.includes('n')?b.y+b.h:b.y;
       doc.shapes=JSON.parse(drag.s0);xform(drag.ids,q=>({x:ax+(q.x-ax)*sx,y:ay+(q.y-ay)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})});drag.moved=true;break}
+    case 'pivot': {const p=snapOn?snap(w):w;rotPiv={key:drag.key,x:p.x,y:p.y};break}
+    case 'rotate': {const c=drag.piv;let d=(Math.atan2(w.y-c.y,w.x-c.x)-drag.a0)*180/Math.PI;d=((d%360)+540)%360-180;if(e.shiftKey)d=Math.round(d/15)*15;
+      doc.shapes=JSON.parse(drag.s0);rotateAround(drag.ids,c,d);drag.ang=d;drag.moved=true;if(drag.multi)rotGrp={key:drag.key,ang:drag.ang0+d};break}
     case 'pencil': {const l=drag.pts[drag.pts.length-1];if(dist(l,w)*view.scale>2)drag.pts.push(w);break}
     case 'measure': drag.b=cursorS||w; measure.b=drag.b; break;
     case 'marquee': drag.b=w; break;
@@ -2743,6 +2783,8 @@ function onUp(e){
   switch(d.kind){
     case 'point': if(d.moved){if(!d.group)mergeDropped(d.id,d.i);pushUndo(d.s0);changed()}else render(); break;
     case 'handle': if(d.moved){pushUndo(d.s0);changed()}else render(); break;
+    case 'pivot': render(); break;
+    case 'rotate': if(d.moved){pushUndo(d.s0);changed()}else render(); break;
     case 'move': case 'extend': case 'resize': if(d.moved){pushUndo(d.s0);changed(d.kind!=='move')}else if(d.kind==='extend'){const sh=byId(d.id);if(sh)autoExtend(sh,d.idx);render()}else{if(d.solo){sel=new Set([d.solo]);renderPanel();updateButtons()}render()} break;
     case 'box': addBox(...boxPts(d)); break;
     case 'line': if(dist(d.a,d.b)*view.scale<4) temp={kind:'line1',pts:[d.a]}; else {temp={pts:[d.a]};addLine(d.b)} break;
@@ -2862,7 +2904,7 @@ function exportDXF(){
   const L=[],add=(...a)=>a.forEach(v=>L.push(String(v))),mm=v=>(Math.round(v*1000)/100).toFixed(2),ascii=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\x20-\x7e]/g,'');
   const poly=(P,closed,layer)=>{add(0,'POLYLINE',8,layer,66,1,10,0,20,0,30,0,70,closed?1:0);P.forEach(p=>add(0,'VERTEX',8,layer,10,mm(p.x),20,mm(-p.y),30,0));add(0,'SEQEND',8,layer)};
   const line=(a,b,layer)=>add(0,'LINE',8,layer,10,mm(a.x),20,mm(-a.y),30,0,11,mm(b.x),21,mm(-b.y),31,0);
-  const text=(x,y,h,t,layer)=>add(0,'TEXT',8,layer,10,mm(x),20,mm(-y),30,0,40,mm(h),1,ascii(t));
+  const text=(x,y,h,t,layer,rot)=>add(0,'TEXT',8,layer,10,mm(x),20,mm(-y),30,0,40,mm(h),1,ascii(t),...(rot?[50,-rot]:[]));
   add(0,'SECTION',2,'HEADER',9,'$INSUNITS',70,4,0,'ENDSEC',0,'SECTION',2,'ENTITIES');
   for(const s of doc.shapes){
     if(s.type==='path'){ if(s.piece&&s.closed){const S=seamPoly(s),cutOnSeam=S&&(!XO||XO.margem);poly(cutOnSeam?sample(s):withContinuousNotches(s,sample(s)),true,'CONTORNO');if(cutOnSeam)poly(withContinuousNotches(s,S),true,'COSTURA');const b=boxOf(s.pts),nm=!XO||XO.nome?(s.name||'Molde'):'',tx=!XO||XO.textos?'cortar '+(s.qtd||1)+'x'+(s.fold?' na dobra':''):'',lb=[nm,tx].filter(Boolean).join(' - ');if(lb)text(b.x+b.w/2,b.y+b.h/2,s.labelSize||1.4,lb,'TEXTO');
@@ -2874,7 +2916,7 @@ function exportDXF(){
     else if(s.type==='mark'&&s.icon==='texto') text(s.x,s.y,+s.ts||.6,s.text||'','TEXTO');
     else if(s.type==='mark'){const r=(+s.size||10)/20;line({x:s.x-r,y:s.y},{x:s.x+r,y:s.y},'MARCAS');line({x:s.x,y:s.y-r},{x:s.x,y:s.y+r},'MARCAS')}
     else if(s.type==='point'){add(0,'POINT',8,'PONTOS',10,mm(s.x),20,mm(-s.y),30,0)}
-    else if(s.type==='text'&&(!XO||XO.textos)) text(s.x,s.y,s.size,s.text,'TEXTO');
+    else if(s.type==='text'&&(!XO||XO.textos)) text(s.x,s.y,s.size,s.text,'TEXTO',+s.rotNow||0);
   }
   if(XO&&XO.bordas){const W=doc.meta.largura,H=doc.meta.altura;poly([{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}],true,'BORDA')}
   add(0,'ENDSEC',0,'EOF'); return L.join('\r\n');
@@ -3137,7 +3179,7 @@ function drawPDF(pdf,ox,oy){
       if(s.icon==='texto'){pdf.setFont('helvetica','normal');pdf.setFontSize(PT(+s.ts||.6));pdf.text(String(s.text||''),X(s.x),Y(s.y),{align:'center',baseline:'middle'})}
       else if(s.icon==='circulo')pdf.circle(X(s.x),Y(s.y),r,'S');else if(s.icon==='ponto'){pdf.setFillColor(17,17,17);pdf.circle(X(s.x),Y(s.y),r*.35,'F');pdf.circle(X(s.x),Y(s.y),r,'S')}
       else{line({x:s.x-r,y:s.y},{x:s.x+r,y:s.y});line({x:s.x,y:s.y-r},{x:s.x,y:s.y+r})}
-    } else if(s.type==='text'&&PR.textos){pdf.setFont('helvetica','normal');pdf.setFontSize(PT(s.size));pdf.text(String(s.text),X(s.x),Y(s.y))}
+    } else if(s.type==='text'&&PR.textos){pdf.setFont('helvetica','normal');pdf.setFontSize(PT(s.size));pdf.text(String(s.text),X(s.x),Y(s.y),+s.rotNow?{angle:-s.rotNow}:undefined)}
   }
 }
 $('#prGo').addEventListener('click',()=>{
