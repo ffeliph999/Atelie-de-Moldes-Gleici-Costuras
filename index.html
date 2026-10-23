@@ -603,7 +603,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 (()=>{let m=document.querySelector('meta[name="viewport"]');
   if(!m){m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m)}
   if(!/interactive-widget/.test(m.content))m.content+=',interactive-widget=resizes-content'})();
-const VERSION='2026.10.22-3'; // shown under "Meus moldes" so a cached old copy is easy to spot
+const VERSION='2026.10.22-4'; // shown under "Meus moldes" so a cached old copy is easy to spot
 const PXCM=96/2.54, NS='http://www.w3.org/2000/svg', STORE='atelie-moldes-v1', OPTKEY='atelie-moldes-opts';
 const $=s=>document.querySelector(s);
 const app=$('#app'), svg=$('#cv'), panelBody=$('#panelBody'), stage=$('#stage');
@@ -1159,7 +1159,10 @@ function renderOverlay(vw,vh){
     h+=`<path class="hl" d="M${a.x} ${a.y}L${b.x} ${b.y}" stroke-width="${2*px}"/><circle class="h" cx="${a.x}" cy="${a.y}" r="${3*px}" stroke-width="${px}"/><circle class="h" cx="${b.x}" cy="${b.y}" r="${3*px}" stroke-width="${px}"/>`;
     h+=olabel((a.x+b.x)/2,(a.y+b.y)/2-6*px,`${fmt(d,2)} cm`,px)}
   if(tool==='seam'&&pick.seamPrev){const pv=pick.seamPrev,sh=byId(pv.id);
-    if(sh&&sh.pts[pv.i]){const a=+opt.seamA||0,b=opt.seamB===''||opt.seamB==null?a:+opt.seamB,P=sh.pts.map(p=>({...p}));P[pv.i].e=pv.side*a;P[pv.i].e2=pv.side*b;
+    if(sh&&sh.pts[pv.i]&&pv.remove){const S=seamPoly(sh);let d='';if(S){const n=S.length;for(let j=0;j<n;j++)if(S[j].seg===pv.i){const q=S[(j+1)%n];d+=`M${S[j].x} ${S[j].y}L${q.x} ${q.y}`}}
+      h+=`<path d="${d}" stroke="var(--warn)" stroke-width="${4*px}" opacity=".85" style="fill:none"/>`;
+      const m=bez(segCtrl(sh.pts,pv.i,true),.5);h+=olabel(m.x,m.y-10*px,'Remover margem deste lado',px)}
+    else if(sh&&sh.pts[pv.i]){const a=+opt.seamA||0,b=opt.seamB===''||opt.seamB==null?a:+opt.seamB,P=sh.pts.map(p=>({...p}));P[pv.i].e=pv.side*a;P[pv.i].e2=pv.side*b;
       h+=`<path class="hl" d="${segD(sh,pv.i)}" stroke-width="${3*px}" opacity=".55" style="fill:none"/>`;
       const S=seamPoly(sh,P); if(S){let d='';const n=S.length;for(let j=0;j<n;j++)if(S[j].seg===pv.i){const q=S[(j+1)%n];d+=`M${S[j].x} ${S[j].y}L${q.x} ${q.y}`}
         h+=`<path class="hl" d="${d}" stroke-width="${2.2*px}" stroke-dasharray="${6*px} ${4*px}" style="fill:none"/>`}
@@ -1275,7 +1278,8 @@ function toolPanel(t){
       rowI('Acabamento:',oSel('seamCf',[['reto','Reto'],['chanfro','Chanfrado']]))+
       (()=>{const sp=pick.seamPiece&&byId(pick.seamPiece);return `<div class="acts" style="display:grid">${btn('seamAll','Aplicar costura em todo o painel','primary',!sp)}${btn('seamRemove','Remover somente a costura','primary',!sp)}${btn('seamDotted',sp&&sp.dotted?'Remover pontilhado do painel':'Aplicar pontilhado ao painel','primary',!sp)}</div>`+
         hint(sp?`Painel: <b>${esc(sp.name||'Molde')}</b>.`:'Os botões acima agem no painel escolhido: clique numa linha ou dentro de um molde.')})()+
-      hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>dentro</b> do molde a margem vai para dentro; <b>fora</b>, vai para fora. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.'));
+      hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>dentro</b> do molde a margem vai para dentro; <b>fora</b>, vai para fora. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.')+
+      hint('Para tirar a margem de um lado só, clique em cima da <b>linha da margem</b> (o tracejado); ela fica vermelha antes do clique.'));
   case 'safety': { const n=doc.shapes.filter(s=>s.type==='path'&&s.piece&&hasSafety(s)).length;
     return sec('Margem de segurança',rowI('Distância:',oNum('safeD',.05,0),'cm')+
       `<div class="acts" style="display:grid">${btn('safeAll','Aplicar em todos os moldes','primary')}${btn('safeNone','Remover de todos os moldes','primary',!n)}</div>`+
@@ -1634,9 +1638,20 @@ function clickGroup(w){
   const A=byId(pick.ga.id),B=v.sh; if(B.locked)return toast('O segundo molde está travado');
   mutate(()=>joinPieces(A,pick.ga.i,B,v.i)); pick={}; renderPanel(); toast(`Moldes agrupados: ${A.name||'Molde'} + ${B.name||'Molde'}`)}
 // seam tool: the side (inside/outside the piece) follows the cursor
-function seamHover(w){const s=nearestSeg(w,14,x=>x.closed&&x.piece);return s?{id:s.sh.id,i:s.i,side:inPoly(w,sample(s.sh))?-1:1}:null}
+function seamHover(w){
+  const s=nearestSeg(w,14,x=>x.closed&&x.piece);
+  // on an existing allowance line (closer to it than to the piece outline) the click removes that side's allowance
+  let r=null;
+  for(const sh of doc.shapes){if(sh.type!=='path'||!sh.piece||!sh.closed||sh.hidden)continue;const S=seamPoly(sh);if(!S)continue;
+    for(let j=0;j<S.length;j++){const q=S[(j+1)%S.length],d=segDist(w,S[j],q);if(d<1e-6&&dist(S[j],q)<1e-6)continue;
+      if(!r||d<r.d)r={id:sh.id,i:S[j].seg,d}}}
+  if(r&&r.d*view.scale<=12*T()&&(!s||r.d<s.d)){const sh=byId(r.id),p=sh.pts[r.i];
+    const e0=p.e!=null?+p.e:(+sh.seam||0),e1=(p.e2!=null&&p.e2!=='')?+p.e2:e0; if(e0||e1) return {id:r.id,i:r.i,remove:true}}
+  return s?{id:s.sh.id,i:s.i,side:inPoly(w,sample(s.sh))?-1:1}:null}
 function clickSeam(w){
   const h=seamHover(w), a=+opt.seamA||0, b=opt.seamB===''||opt.seamB==null?null:+opt.seamB;
+  if(h&&h.remove){const sh=byId(h.id);if(sh.locked)return toast('Molde travado');
+    mutate(()=>{const p=sh.pts[h.i];p.e=0;delete p.e2;delete p.cf;delete p.hem});pick.seamPiece=h.id;pick.seamPrev=null;renderPanel();toast('Margem removida deste lado');return}
   if(h){const sh=byId(h.id);mutate(()=>{const p=sh.pts[h.i];p.e=h.side*a;if(b!=null&&b!==a)p.e2=h.side*b;else delete p.e2;p.cf=opt.seamCf;delete p.hem});
     pick.seamPiece=h.id;pick.seamSide=h.side;renderPanel();
     toast(`Margem de ${fmt(a,2)}${b!=null&&b!==a?' → '+fmt(b,2):''} cm ${h.side<0?'para dentro':'para fora'}`);return}
