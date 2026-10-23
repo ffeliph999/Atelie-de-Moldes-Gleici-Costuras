@@ -150,6 +150,10 @@ image.locked{pointer-events:none}
 .chk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
 .chk input{accent-color:var(--accent);width:15px;height:15px;margin:0}
 .radios{display:grid;gap:6px}
+.ptgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 12px;margin:2px 0 4px}
+.ptf{display:flex;align-items:center;gap:6px;font-size:12.5px;min-width:0}
+.ptf b{width:12px;font-weight:600}
+.ptf input[type=number]{flex:1;min-width:0;width:100%}
 .btn{border:1px solid var(--line);background:var(--chrome-2);color:var(--ink);border-radius:7px;padding:7px 11px;font-size:12.5px;font-weight:500}
 .btn:hover:not(:disabled){border-color:var(--accent-line)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
@@ -633,7 +637,7 @@ textarea.code{width:100%;height:230px;font-family:var(--font-num);font-size:11.5
 (()=>{let m=document.querySelector('meta[name="viewport"]');
   if(!m){m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m)}
   if(!/interactive-widget/.test(m.content))m.content+=',interactive-widget=resizes-content'})();
-const VERSION='2026.10.24-4'; // shown under "Meus moldes" so a cached old copy is easy to spot
+const VERSION='2026.10.24-5'; // shown under "Meus moldes" so a cached old copy is easy to spot
 const PXCM=96/2.54, NS='http://www.w3.org/2000/svg', STORE='atelie-moldes-v1', OPTKEY='atelie-moldes-opts';
 const $=s=>document.querySelector(s);
 const app=$('#app'), svg=$('#cv'), panelBody=$('#panelBody'), stage=$('#stage');
@@ -645,7 +649,7 @@ let lib={docs:{},current:null}, doc=null;
 let sel=new Set(), selPoint=null, tool='select', view={x:0,y:0,scale:8};
 let snapOn=true, guidesOn=false, measuresOn=false, hidePts=false;
 let gridOn=false; try{gridOn=localStorage.getItem('atelie-grid')==='1'}catch(e){}
-let undoS=[], redoS=[], drag=null, temp=null, measure=null, cursorW=null, cursorS=null, spaceDown=false, pending=null;
+let undoS=[], redoS=[], drag=null, temp=null, measure=null, cursorW=null, cursorS=null, spaceDown=false, pending=null, ptShift=false;
 let pick={}; // per-tool picking state
 let gradeView='list', newGrade={name:'',color:SWATCH[0]}, gradePoint=null;
 let tape={items:[]};
@@ -655,7 +659,7 @@ let resizeMode=false; // top-bar "Redimensionar" toggles drag handles around the
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
 const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genGrainA:0,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
-  showHandles:false,symHandles:true,keepCurve:false,seamA:1,seamB:'',seamCf:'reto',seamCurve:false,safeD:.3,nText:'',nW:'',nMeas:'p',nTs:.6,nTdir:'horizontal',nP:'',nRedis:false,nRedisMode:'qtd',nRedisN:3,nRedisD:2.5,perimEnd:'b',cDentro:false,cCentro:false,ptMode:'livre',ptL:'',ptA:'',ptP:'',ptC:'',hideGrades:false,seamArea:false,hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
+  showHandles:false,symHandles:true,keepCurve:false,seamA:1,seamB:'',seamCf:'reto',seamCurve:false,safeD:.3,nText:'',nW:'',nMeas:'p',nTs:.6,nTdir:'horizontal',nP:'',nRedis:false,nRedisMode:'qtd',nRedisN:3,nRedisD:2.5,perimEnd:'b',cDentro:false,cCentro:false,ptLk:{},ptL:'',ptA:'',ptP:'',ptC:'',hideGrades:false,seamArea:false,hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
   alignDir:'h',par:1,menor:true,tbBase:false,tbPin:false,tapeBase:false,tapePin:false,gcX:true,gcY:true};
 try{Object.assign(opt,JSON.parse(localStorage.getItem(OPTKEY)||'{}'))}catch(e){}
 function saveOpt(){try{localStorage.setItem(OPTKEY,JSON.stringify(opt))}catch(e){}}
@@ -1153,7 +1157,7 @@ function shapesSVG(px,exp){
       if(sh.piece&&sh.closed) h+=decor(sh,px,C,exp);
     } else if(sh.type==='notch'){ h+=notchSVG(sh,px,exp,on);
     } else if(sh.type==='mark'){ h+=markSVG(sh,px,exp,on);
-    } else if(sh.type==='point'){ const r=exp?.15:3.2*px; const m=`<path class="${C('ptm')}" d="M${sh.x-r*1.7} ${sh.y}h${r*3.4}M${sh.x} ${sh.y-r*1.7}v${r*3.4}" stroke-width="${px*1.2}"/><circle class="${C('ptc')}" cx="${sh.x}" cy="${sh.y}" r="${r*.55}"/>`;
+    } else if(sh.type==='point'){ const r=exp?.12:3.2*px; const m=`<path class="${C('ptm')}" d="M${sh.x-r} ${sh.y-r}h${2*r}v${2*r}h${-2*r}z" stroke-width="${px*1.2}" style="fill:none"/>`;   // a small square, like molde.me
       h+=exp?m:`<g data-id="${sh.id}" class="${on?'sel':''}"><circle class="hitf" cx="${sh.x}" cy="${sh.y}" r="${9*px}"/>${m}</g>`;
     } else if(sh.type==='text'){ if(!exp&&textEd&&textEd.id===sh.id) continue; if(exp&&XO&&!XO.textos) continue; h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}">${esc(sh.text)}</text>`; }
   }
@@ -1304,9 +1308,13 @@ function renderOverlay(vw,vh){
   // picked segments
   const hlSeg=(id,i,lab)=>{const sh=byId(id);if(!sh||!sh.pts[i])return;h+=`<path class="hl" d="${segD(sh,i)}" stroke-width="${5*px}" opacity=".85"/>`;if(lab){const c=segCtrl(sh.pts,i,sh.closed),m=bez(c,.5);h+=olabel(m.x,m.y-6*px,lab,px)}};
   if(tool==='check'){ if(pick.ca) hlSeg(pick.ca.id,pick.ca.i,'A · '+fmt(pick.ca.len,2)+' cm'); if(pick.cb) hlSeg(pick.cb.id,pick.cb.i,'B · '+fmt(pick.cb.len,2)+' cm'); }
-  if(tool==='point'&&pick.ref&&opt.ptMode!=='livre'){const r=pick.ref;h+=`<circle class="h on" cx="${r.x}" cy="${r.y}" r="${5*px}" stroke-width="${1.5*px}"/>`;
-    const q=pointTarget(cursorW);if(q)h+=`<path class="hl" d="M${r.x} ${r.y}L${q.x} ${q.y}" stroke-width="${px}" stroke-dasharray="${4*px} ${3*px}" style="fill:none"/><circle class="h pick" cx="${q.x}" cy="${q.y}" r="${3.5*px}" stroke-width="${1.5*px}"/>`+
-      olabel(q.x,q.y-10*px,{la:`L ${fmt(Math.abs(q.x-r.x),2)} · A ${fmt(Math.abs(q.y-r.y),2)} cm`,c:`C ${fmt(dist(q,r),2)} cm`,p:`P ${fmt(+opt.ptP||0,2)} cm`}[opt.ptMode],px)}
+  if(tool==='point'){const r=pick.ref;
+    if(!r&&cursorW){const v=nearestRefPoint(cursorW);if(v)h+=`<circle class="h" cx="${v.x}" cy="${v.y}" r="${4.5*px}" stroke-width="${1.5*px}" style="fill:none"/>`}   // the point the 1st click will take
+    if(r){h+=`<circle class="h on" cx="${r.x}" cy="${r.y}" r="${5*px}" stroke-width="${1.5*px}"/>`;
+      const q=pointTarget(cursorW);if(q){const s=segThrough(q);
+        if(s)h+=`<path class="hl" d="${pathD(s.sh.pts,s.sh.closed)}" stroke-width="${1.6*px}" opacity=".7" style="fill:none"/>`;   // the line that will get the point
+        h+=`<path class="hl" d="M${r.x} ${r.y}L${q.x} ${q.y}" stroke-width="${px}" stroke-dasharray="${4*px} ${3*px}" style="fill:none"/><circle class="h pick" cx="${q.x}" cy="${q.y}" r="${3.5*px}" stroke-width="${1.5*px}"/>`+
+          olabel(r.x,r.y-10*px,fmt(dist(q,r),2)+' cm',px)}}}
   if(tool==='perim'&&pick.perim){const R=pick.perim.run||[pick.perim.i];R.forEach((i,k)=>hlSeg(pick.perim.id,i,k===Math.floor(R.length/2)?fmt(pick.perim.len,2)+' cm':''));const sh=byId(pick.perim.id);
     // red dots: the ends that will move
     if(sh){const R=pick.perim.run||[pick.perim.i],a=sh.pts[R[0]],b=sh.pts[(R[R.length-1]+1)%sh.pts.length],mv=opt.perimMode==='bi'?[a,b]:opt.perimMode==='uni'?[opt.perimEnd==='a'?a:b]:[];mv.forEach(q=>h+=`<circle cx="${q.x}" cy="${q.y}" r="${4*px}" style="fill:var(--warn);stroke:none"/>`)}}
@@ -1517,12 +1525,11 @@ function toolPanel(t){
   case 'curve': return sec('Curva',hint('Clique para adicionar pontos de curva. Clique no primeiro ponto para fechar. Duplo clique ou Enter termina.')+`<div class="acts">${btn('finishCurve','Concluir curva','primary')}${btn('closeCurve','Fechar forma')}</div>`);
   case 'pencil': return sec('Mão livre',hint('Desenhe arrastando. Termine perto do início para fechar a forma.')+
       hint('O traço vira uma curva com pontos: círculos são pontos de curva e quadrados são cantos. Arraste um ponto para ajustar o traço; duplo clique num ponto liga ou desliga o <b>ponto de controle</b> (cheio). <b>Suavizar curvas</b> (barra de cima) reduz pontos em excesso.'));
-  case 'point': { const m=opt.ptMode, g2=(a,b)=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${a}${b}</div>`;
-    return sec('Marcar pontos',`<div class="radios">${[['livre','Livre'],['la','Largura e altura (L e A)'],['p','Pelo contorno (P)'],['c','Comprimento (C)']].map(([v,l])=>`<label class="chk"><input type="radio" name="ptm" data-opt="ptMode" value="${v}"${m===v?' checked':''}> ${l}</label>`).join('')}</div>`+
-      (m==='la'?rowI('L (largura):',oNum('ptL',.1),'cm')+rowI('A (altura):',oNum('ptA',.1),'cm'):m==='p'?rowI('P:',oNum('ptP',.1,0),'cm'):m==='c'?rowI('C:',oNum('ptC',.1,0),'cm'):'')+
-      hint(m==='livre'?'Clique para marcar pontos de referência.':pick.ref?'Referência escolhida (círculo). Mova o mouse para o lado onde o ponto deve ficar e clique: ele é marcado na medida do painel'+(m==='p'?', andando pelo contorno.':'. O ponto novo vira a próxima referência.')+' <b>Esc</b> troca a referência.':'Clique primeiro no ponto que vai servir de <b>referência</b>.')+
-      (m==='c'?hint('C marca o ponto nessa distância da referência, na direção do mouse (bom para raios e ângulos).'):'')+
-      (pick.ref&&m!=='livre'?btn('ptRefClear','Escolher outra referência','block'):'')); }
+  case 'point': { const K=ptLocks(),M=ptMeasures(pick.ref&&pointTarget(cursorW)),T={L:'Largura',A:'Altura',C:'Comprimento',P:'Perímetro'};
+    const f=k=>`<label class="ptf" title="${T[k]}"><input type="checkbox" data-ptk="${k}"${K[k]?' checked':''} aria-label="Fixar ${T[k]}"><b>${k}</b><input type="number" id="pt-${k}" step="0.1" min="0" value="${K[k]?(+opt['pt'+k]||0):(M[k]!=null?M[k].toFixed(2):'')}" aria-label="${T[k]} (cm)"></label>`;
+    return sec('Marcar pontos',`<div class="ptgrid">${f('L')}${f('C')}${f('A')}${f('P')}</div>`+
+      hint(pick.ref?'Mova o mouse: a régua mede a partir do ponto de referência. Clique para marcar: numa linha ou curva vira <b>ponto de controle</b> dela; fora, um ponto solto. Marque L, A, C ou P para fixar a medida. <b>Shift</b> trava em 45°; botão direito ou <b>Esc</b> cancela.':'Clique perto do ponto que vai servir de <b>referência</b>: a ferramenta pega o ponto mais próximo. <b>D</b> apaga os pontos soltos.')+
+      (doc.shapes.some(s=>s.type==='point')?btn('ptClear','Apagar pontos soltos (D)','block'):'')); }
   }
   return sec(TNAME[t]||'','');
 }
@@ -1661,6 +1668,11 @@ function bindPanel(root){
       saveOpt();
       if(k==='textSize'&&textEd){textEd.size=+opt.textSize;placeTextEditor()}
       if(['tapeBase','tbBase','tapePin','tbPin','genGrain','nIcon','mIcon','nRedis','nRedisMode','perimMode','ptMode','nP','nMeas','showHandles','symHandles','keepCurve'].includes(k)){renderPanel();render()}});});
+  // Marcar pontos: a ticked box fixes its measure; typing a value ticks it
+  root.querySelectorAll('[data-ptk]').forEach(cb=>cb.addEventListener('change',()=>{const k=cb.dataset.ptk,K=ptLocks(),inp=document.getElementById('pt-'+k);
+    K[k]=cb.checked;if(cb.checked){opt['pt'+k]=parseFloat(inp.value)||0;if(k==='P'){K.L=K.A=K.C=false}else K.P=false}saveOpt();renderPanel();render()}));
+  PTK.forEach(k=>{const inp=root.querySelector('#pt-'+k);if(inp)inp.addEventListener('input',()=>{const v=parseFloat(inp.value);if(!(v>=0))return;const K=ptLocks();opt['pt'+k]=v;
+    if(!K[k]){K[k]=true;if(k==='P'){K.L=K.A=K.C=false}else K.P=false;const cb=root.querySelector(`[data-ptk="${k}"]`);if(cb)cb.checked=true;PTK.forEach(o=>{const c=root.querySelector(`[data-ptk="${o}"]`);if(c)c.checked=!!K[o]})}saveOpt();render()})});
   root.querySelectorAll('[data-meta]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.meta;let v=el.type==='number'?parseFloat(el.value):el.value;if(el.type==='number'&&!(v>0))return;doc.meta[k]=v;if(k==='nome')$('#docTitle').value=v;render();scheduleSave()}));
   root.querySelectorAll('[data-k]').forEach(el=>{
     const ev=(el.type==='checkbox'||el.tagName==='SELECT')?'change':'input';
@@ -1834,20 +1846,73 @@ function subdivideRun(sh,run,mode,val){
   for(let i=0;i<n;i++){if(drop.has(i))continue;out.push(P[i]);if(i===run[0])out.push(...NP)}
   sh.pts=out; return {lostG,loop};
 }
-// "Marcar pontos" with a reference: L/A offsets, P along the contour, C = distance toward the cursor
-function pointTarget(w){const r=pick.ref,m=opt.ptMode;if(!r||!w)return null;
-  if(m==='la'){const L=Math.abs(+opt.ptL||0),A=Math.abs(+opt.ptA||0);return{x:r.x+(w.x>=r.x?1:-1)*L,y:r.y+(w.y>=r.y?1:-1)*A}}
-  if(m==='c'){const C=+opt.ptC||0,d=dist(w,r);if(!d)return null;return{x:r.x+(w.x-r.x)/d*C,y:r.y+(w.y-r.y)/d*C}}
-  if(m==='p'){const sh=r.id&&byId(r.id);if(!sh)return null;const n=sh.pts.length,s=nearestSeg(w,1e9,x=>x===sh);if(!s)return null;
-    const fwd=sh.closed?((s.i-r.i+n)%n)<n/2:s.i>=r.i,q=walkContour(sh,r.i,fwd?1:-1,+opt.ptP||0);return q?q.q:null}
-  return null}
+// "Marcar pontos" like molde.me: the 1st click takes the nearest point as reference, a dashed ruler measures from it,
+// the 2nd click marks the point. On a line or curve it becomes a control point of that line; elsewhere a loose point.
+// L, A, C and P show the live measures; a ticked box fixes that measure. Shift: 45° steps.
+const PTK=['L','A','C','P'];
+function ptLocks(){const o=opt.ptLk||(opt.ptLk={});return o}
+function nearestRefPoint(w){let best=null;
+  for(const sh of doc.shapes){if(sh.type==='path')sh.pts.forEach((p,i)=>{const d=dist(p,w);if(!best||d<best.d)best={x:p.x,y:p.y,id:sh.id,i,d}});
+    else if(sh.type==='point'){const d=dist(sh,w);if(!best||d<best.d)best={x:sh.x,y:sh.y,pid:sh.id,d}}}
+  return best}
+// segment of a path that goes through q (world tolerance), with its curve parameter refined
+function segThrough(q,tol=.02){const s=nearestSeg(q,1e9,x=>x.type==='path'&&!x.locked);if(!s||s.d>tol)return null;
+  const c=segCtrl(s.sh.pts,s.i,s.sh.closed),st=straight(s.sh.pts,s.i),f=t=>st?{x:c[0].x+(c[3].x-c[0].x)*t,y:c[0].y+(c[3].y-c[0].y)*t}:bez(c,t);
+  let lo=Math.max(0,s.t-1/16),hi=Math.min(1,s.t+1/16);for(let k=0;k<40;k++){const a=lo+(hi-lo)/3,b=hi-(hi-lo)/3;if(dist(f(a),q)<dist(f(b),q))hi=b;else lo=a}
+  const t=(lo+hi)/2;return{sh:s.sh,i:s.i,t,q:f(t)}}
+// perimeter from the reference point to q along the reference's outline (the shorter way on a closed one)
+function perimTo(r,q){const sh=r.id&&byId(r.id);if(!sh||sh.type!=='path')return null;const S=sample(sh),n=S.length,m=sh.closed?n:n-1;if(n<2)return null;
+  const cum=[0];for(let k=0;k<m;k++)cum.push(cum[k]+dist(S[k],S[(k+1)%n]));
+  const pos=w=>{let b=null;for(let k=0;k<m;k++){const d=segDist(w,S[k],S[(k+1)%n]);if(!b||d<b.d)b={d,k}}
+    const a=S[b.k],c=S[(b.k+1)%n],dx=c.x-a.x,dy=c.y-a.y,l2=dx*dx+dy*dy||1,u=clamp(((w.x-a.x)*dx+(w.y-a.y)*dy)/l2,0,1);return{d:b.d,s:cum[b.k]+Math.sqrt(l2)*u}};
+  const A=pos(r),B=pos(q);if(B.d>.05)return null;const d=Math.abs(B.s-A.s),tot=cum[m];return sh.closed?Math.min(d,tot-d):d}
+function pointTarget(w){const r=pick.ref;if(!r||!w)return null;const K=ptLocks(),v=k=>Math.abs(+opt['pt'+k]||0);
+  if(K.P){const sh=r.id&&byId(r.id);if(!sh)return null;const n=sh.pts.length,s=nearestSeg(w,1e9,x=>x===sh);if(!s)return null;
+    const fwd=sh.closed?((s.i-r.i+n)%n)<n/2:s.i>=r.i,q=walkContour(sh,r.i,fwd?1:-1,v('P'));return q?{x:q.q.x,y:q.q.y}:null}
+  let q={x:w.x,y:w.y};
+  if(!K.L&&!K.A&&!K.C){const s=nearestSeg(w,10,x=>x.type==='path'&&!x.locked);if(s)q={x:s.q.x,y:s.q.y};else if(cursorS)q={x:cursorS.x,y:cursorS.y}}
+  if(ptShift){const a=Math.round(Math.atan2(q.y-r.y,q.x-r.x)/(Math.PI/4))*Math.PI/4,l=dist(q,r);q={x:r.x+Math.cos(a)*l,y:r.y+Math.sin(a)*l}}
+  // a single fixed measure over a line: the point goes where the line meets that measure (closest to the mouse)
+  const nK=(K.L?1:0)+(K.A?1:0)+(K.C?1:0);
+  if(nK===1){const s=nearestSeg(w,10,x=>x.type==='path'&&!x.locked);
+    if(s){const g=K.C?(p=>dist(p,r)-v('C')):K.L?(p=>p.x-(r.x+(w.x>=r.x?1:-1)*v('L'))):(p=>p.y-(r.y+(w.y>=r.y?1:-1)*v('A')));
+      const c=segCtrl(s.sh.pts,s.i,s.sh.closed),st=straight(s.sh.pts,s.i),f=t=>st?{x:c[0].x+(c[3].x-c[0].x)*t,y:c[0].y+(c[3].y-c[0].y)*t}:bez(c,t);let best=null;
+      for(let k=0;k<64;k++){let a=k/64,b=(k+1)/64,ga=g(f(a)),gb=g(f(b));if(ga*gb>0)continue;for(let it=0;it<40;it++){const m=(a+b)/2,gm=g(f(m));if(ga*gm<=0){b=m;gb=gm}else{a=m;ga=gm}}
+        const p=f((a+b)/2);if(!best||dist(p,w)<dist(best,w))best=p}
+      if(best)return best}}
+  if(K.C){const d=dist(q,r)||1,C=v('C');q={x:r.x+(q.x-r.x)/d*C,y:r.y+(q.y-r.y)/d*C}}
+  if(K.L)q.x=r.x+(w.x>=r.x?1:-1)*v('L');
+  if(K.A)q.y=r.y+(w.y>=r.y?1:-1)*v('A');
+  return q}
+// live values for the panel (unticked boxes follow the mouse)
+function ptMeasures(q){const r=pick.ref;if(!r||!q)return{};const p=perimTo(r,q);return{L:Math.abs(q.x-r.x),A:Math.abs(q.y-r.y),C:dist(q,r),P:p}}
+function updPtFields(){if(tool!=='point')return;const M=ptMeasures(pick.ref&&pointTarget(cursorW)),K=ptLocks();
+  for(const k of PTK){const el=document.getElementById('pt-'+k);if(!el||K[k]||document.activeElement===el)continue;el.value=M[k]!=null?M[k].toFixed(2):''}}
+// insert a point into segment i of a path at parameter t without changing the drawing (exact curve split)
+function splitSegAt(sh,i,t){const P=sh.pts,n=P.length,j=(i+1)%n,a=P[i],b=P[j];
+  if(straight(P,i)){const q={x:r3(a.x+(b.x-a.x)*t),y:r3(a.y+(b.y-a.y)*t),c:true};copySegProps(a,b,q,t);P.splice(i+1,0,q);return i+1}
+  freezeHandles(sh,i);freezeHandles(sh,j);const c=segCtrl(P,i,sh.closed),L=(u,v)=>({x:u.x+(v.x-u.x)*t,y:u.y+(v.y-u.y)*t});
+  const p01=L(c[0],c[1]),p12=L(c[1],c[2]),p23=L(c[2],c[3]),p012=L(p01,p12),p123=L(p12,p23),m=L(p012,p123),o=v=>({x:r3(v.x),y:r3(v.y)});
+  if(a.s)a.ho={x:r3(p01.x-a.x),y:r3(p01.y-a.y)}; if(b.s)b.hi={x:r3(p23.x-b.x),y:r3(p23.y-b.y)};
+  const q={...o(m),s:true,c:true,hi:{x:r3(p012.x-m.x),y:r3(p012.y-m.y)},ho:{x:r3(p123.x-m.x),y:r3(p123.y-m.y)}};copySegProps(a,b,q,t);
+  P.splice(i+1,0,q);return i+1}
+// the new point carries the line's allowance, finish and grading
+function copySegProps(a,b,q,t){if(a.e!=null){const e0=+a.e,e1=a.e2!=null&&a.e2!==''?+a.e2:e0;if(e1!==e0){const em=r3(e0+(e1-e0)*t);q.e=em;q.e2=e1;a.e2=em}else q.e=e0}
+  if(a.cf)q.cf=a.cf; if(a.sm)q.sm=a.sm;
+  if(a.g&&b.g){q.g={};for(const z in a.g)if(b.g[z])q.g[z]={x:r3(a.g[z].x+(b.g[z].x-a.g[z].x)*t),y:r3(a.g[z].y+(b.g[z].y-a.g[z].y)*t)}}}
 function clickPoint(p,w){
-  if(opt.ptMode==='livre'){mutate(()=>doc.shapes.push({id:uid(),type:'point',x:p.x,y:p.y}));return}
-  if(!pick.ref){const v=nearestVertex(w,14);
-    if(v)pick.ref={x:v.sh.pts[v.i].x,y:v.sh.pts[v.i].y,id:v.sh.id,i:v.i};else if(opt.ptMode==='p')return toast('No modo P, a referência é um ponto de um molde ou linha');else pick.ref={x:p.x,y:p.y};
-    renderPanel();render();return}
-  const q=pointTarget(w);if(!q)return toast(opt.ptMode==='p'?'A distância P passa do fim da linha':'Informe a medida no painel');
-  mutate(()=>doc.shapes.push({id:uid(),type:'point',x:r3(q.x),y:r3(q.y)}));if(opt.ptMode!=='p')pick.ref={x:q.x,y:q.y};renderPanel()}
+  if(!pick.ref){const v=nearestRefPoint(w);pick.ref=v?{x:v.x,y:v.y,id:v.id,i:v.i}:{x:p.x,y:p.y};renderPanel();render();return}
+  const q=pointTarget(w);if(!q)return toast('A medida P passa do fim da linha');
+  let msg='Ponto marcado';
+  mutate(()=>{const v=nearestRefPoint(q);
+    if(v&&v.d<.02&&v.id){const sh=byId(v.id);sh.pts[v.i].c=true;msg='Esse ponto já existe: virou ponto de controle';return}
+    const s=segThrough(q);
+    if(s&&s.t>1e-3&&s.t<1-1e-3){splitSegAt(s.sh,s.i,s.t);msg='Ponto de controle criado na linha'}
+    else doc.shapes.push({id:uid(),type:'point',x:r3(q.x),y:r3(q.y)})});
+  toast(msg);pick.ref=null;renderPanel();render()}
+// D with this tool: remove the loose points (those that are not part of a molde)
+function clearLoosePoints(){const n=doc.shapes.filter(s=>s.type==='point').length;if(!n)return toast('Não há pontos soltos');
+  mutate(()=>{doc.shapes=doc.shapes.filter(s=>s.type!=='point')});toast(n+' ponto'+(n>1?'s soltos removidos':' solto removido'))}
 function boxPts(d){const a=d.a;let dx=d.b.x-a.x,dy=d.b.y-a.y;if(d.sq){const m=Math.max(Math.abs(dx),Math.abs(dy));dx=(dx<0?-1:1)*m;dy=(dy<0?-1:1)*m}
   return d.ctr?[{x:a.x-dx,y:a.y-dy},{x:a.x+dx,y:a.y+dy}]:[a,{x:a.x+dx,y:a.y+dy}]}
 function addBox(a,b){
@@ -2468,6 +2533,7 @@ const ACT={
   attachToPiece(){const ss=selShapes(),pc=ss.find(s=>s.type==='path'&&s.piece&&s.closed);if(!pc)return;mutate(()=>ss.forEach(s=>{if(s!==pc)s.parent=pc.id}));sel=new Set([pc.id]);renderPanel();toast('Adicionado ao molde')},
   detachFromPiece(){const s=selShapes()[0];if(!s)return;mutate(()=>{delete s.parent});toast('Separado do molde')},
   ptRefClear(){pick.ref=null;renderPanel();render()},
+  ptClear(){clearLoosePoints();renderPanel()},
   subdiv(b){const sh=selShapes()[0];if(!sh||sh.type!=='path')return;if(sh.locked)return toast('Forma travada');
     const runs=selPoint&&selPoint.id===sh.id?[runOfSeg(sh,Math.min(selPoint.i,sh.closed?sh.pts.length-1:sh.pts.length-2))]:sh.pts.map((q,i)=>i).filter(i=>(sh.closed||i<sh.pts.length-1)&&!straight(sh.pts,i)).reduce((acc,i)=>{if(!acc.some(r=>r.includes(i)))acc.push(runOfSeg(sh,i));return acc},[]);
     if(!runs.length)return toast('Esta forma não tem curvas');const nr=runs.length;
@@ -2511,6 +2577,7 @@ function onDown(e){
   hidePop();
   // phone: with the options sheet open, a tap on the drawing only closes the sheet
   if(mobile&&e.pointerType!=='aim'&&app.classList.contains('panel-open')&&pointers.size===0){act('panelToggle');e.preventDefault&&e.preventDefault();return}
+  if(e.button===2&&tool==='point'&&pick.ref){pick.ref=null;renderPanel();render();e.preventDefault&&e.preventDefault();return}   // right click cancels the mark
   if(e.button===2&&tool==='select'&&!spaceDown){const w0=toWorld(e),v=nearestVertex(w0,10,s=>s.piece&&s.closed&&!s.locked),now=Date.now();
     if(v&&lastRight&&lastRight.id===v.sh.id&&lastRight.i===v.i&&now-lastRight.t<450){lastRight=null;startOverlay(v.sh,v.i);e.preventDefault();return}
     lastRight=v?{id:v.sh.id,i:v.i,t:now}:null}
@@ -2636,12 +2703,13 @@ function onMove(e){
     const wx=pinch.vx+(pinch.mx-r.left)/pinch.s,wy=pinch.vy+(pinch.my-r.top)/pinch.s;view.scale=ns;view.x=wx-((a.x+b.x)/2-r.left)/ns;view.y=wy-((a.y+b.y)/2-r.top)/ns;render();return}
   const r=svg.getBoundingClientRect(); const inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
   if(!drag&&!inside) return;
-  const w=toWorld(e); cursorW=w;
+  const w=toWorld(e); cursorW=w; ptShift=!!e.shiftKey;
   if(tool!=='select'&&tool!=='pencil') cursorS=snap(w,{temp:true}); else cursorS=null;
   if(tool==='line'&&e.shiftKey){const a=drag&&drag.kind==='line'?drag.a:(temp&&temp.kind==='line1'?temp.pts[0]:null);if(a)cursorS=constrain(a,w)}
   $('#stPos').textContent=`x ${fmt((cursorS||w).x)}  y ${fmt((cursorS||w).y)} cm`;
   if(pick.ovl&&!drag){moveOverlay(w);render();return}
   if(!drag||drag.kind==='aim') aimHover(w);
+  if(tool==='point') updPtFields();
   if(!drag){if(temp||guidesOn||tool!=='select')render();return}
   switch(drag.kind){
     case 'pan': view.x=drag.vx-(e.clientX-drag.cx)/view.scale; view.y=drag.vy-(e.clientY-drag.cy)/view.scale; break;
@@ -2727,6 +2795,7 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();ACT.del();return}
   if(e.key.startsWith('Arrow')&&sel.size){e.preventDefault();const st=e.shiftKey?1:.1,d={ArrowLeft:{x:-st,y:0},ArrowRight:{x:st,y:0},ArrowUp:{x:0,y:-st},ArrowDown:{x:0,y:st}}[e.key];
     const ids=new Set([...sel].filter(i=>!byId(i).locked));mutate(()=>translate(ids,d),false);return}
+  if(tool==='point'&&k==='d'&&!mod){clearLoosePoints();renderPanel();return}   // molde.me: D removes the loose points
   // same keys as molde.me
   const map={v:'select',r:'rect',o:'ellipse',l:'line',c:'curve',e:'extend',f:'pencil',p:'point','.':'point',t:'text',x:'perim',m:'generate',n:'tape','1':'seam',s:'safety','4':'notch',d:'dart','9':'align','5':'grade',a:'gradeAuto'};
   if(map[k]){setTool(map[k]);return}
