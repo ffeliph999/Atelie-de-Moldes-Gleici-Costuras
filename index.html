@@ -52,7 +52,9 @@ body{height:100%;margin:0;background:var(--chrome);color:var(--ink);font-family:
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.app{position:relative;height:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:46px minmax(0,1fr);background:var(--chrome);overflow:hidden}
+.app{position:relative;height:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:46px minmax(0,1fr);background:var(--chrome);overflow:hidden;overflow:clip}
+/* clip, not just hide: the phone options sheet parked below the screen must never become scrollable area */
+.main,.stage{overflow:clip}
 /* top bar */
 .top{display:flex;align-items:center;gap:1px;padding:0 6px;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
 .sep{width:1px;height:22px;background:var(--line);margin:0 5px;flex:none}
@@ -1221,7 +1223,14 @@ function applyUI(){
 }
 function setUI(p){uiPref=p;try{localStorage.setItem('atelie-ui',p)}catch(e){}applyUI();toast(p==='auto'?'Modo automático: '+(mobile?'celular':'computador'):p==='mobile'?'Modo celular':'Modo computador')}
 let lastLandscape=innerWidth>innerHeight;
-addEventListener('resize',()=>{if(uiPref==='auto')applyUI();const ls=innerWidth>innerHeight;if(ls!==lastLandscape){lastLandscape=ls;if(mobile)requestAnimationFrame(fit)}});
+addEventListener('resize',()=>{if(uiPref==='auto')applyUI();const ls=innerWidth>innerHeight;if(ls!==lastLandscape){lastLandscape=ls;if(mobile)requestAnimationFrame(fit)}else render()});
+// the phone keyboard can scroll the page or the layout boxes to reveal a field; put everything back once it is gone
+function unshift(){let moved=false;
+  for(const el of [document.documentElement,document.body,app,$('.main'),stage]) if(el&&(el.scrollTop||el.scrollLeft)){el.scrollTop=0;el.scrollLeft=0;moved=true}
+  if(scrollX||scrollY){scrollTo(0,0);moved=true} if(moved) render()}
+const typing=()=>{const a=document.activeElement;return a&&a.matches('input,select,textarea')};
+document.addEventListener('focusout',()=>setTimeout(()=>{if(!typing())unshift()},120));
+if(window.visualViewport) visualViewport.addEventListener('resize',()=>setTimeout(()=>{if(!typing())unshift();render()},150));
 const MORE=[['zin','Mais zoom','zin'],['zout','Menos zoom','zout'],['fitv','Ajustar à tela','fit'],['z100','Tamanho real','measures'],
   ['snap','Ímã','snap'],['guides','Guias','guides'],['grid','Grade','grid'],['measures','Mostrar medidas','measures'],['hidePts','Esconder pontos','hidePts'],
   ['smooth','Suavizar curvas','smooth'],['rotate','Rotacionar','rotate'],['flipV','Inverter na vertical','flipV'],
@@ -1903,7 +1912,7 @@ const ACT={
   theme(b){const cur=document.documentElement.dataset.theme||'auto';
     showPop(b&&b.offsetParent?b:(mobile?$('#moreBtn'):$('#tb-theme')),`<b>Tema</b><div class="themes">${THEMES.map(([k,l,c1,c2])=>`<button type="button" class="themeopt${cur===k?' on':''}" data-th="${k}"><span class="sw2" style="background:linear-gradient(135deg,${c1} 50%,${c2} 50%)"></span>${l}</button>`).join('')}</div>`,
       p=>p.querySelectorAll('[data-th]').forEach(x=>x.onclick=()=>{setTheme(x.dataset.th);hidePop()}))},
-  panelToggle(){app.classList.toggle('panel-open');updateChip()},
+  panelToggle(){app.classList.toggle('panel-open');updateChip();if(!app.classList.contains('panel-open')){const a=document.activeElement;if(a&&panelBody.contains(a))a.blur();unshift()}},
   more(){const needSel=['rotate','flipV','flipH','lock'],on={snap:snapOn,guides:guidesOn,grid:gridOn,measures:measuresOn,hidePts,resize:resizeMode};
     $('#moreGrid').innerHTML=MORE.map(([a,l,i])=>`<button data-m="${a}"${(needSel.includes(a)&&!sel.size)||(a==='smooth'&&!sel.size&&!selPoint)?' disabled':''} class="${on[a]?'on':''}">${ic(i)}<span>${l}</span></button>`).join('');
     $('#moreGrid').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{$('#moreSheet').hidden=true;act(b.dataset.m,$('#moreBtn'))});
