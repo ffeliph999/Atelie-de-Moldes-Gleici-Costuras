@@ -48,31 +48,31 @@ Na primeira vez o editor abre com um molde de exemplo (camiseta básica: frente,
 | **Linha** (L) | Uma linha por traço. O cursor gruda nas pontas e em qualquer ponto das linhas existentes. Shift trava em 0°, 45° e 90°. |
 | **Curva** (C) | Cada clique adiciona um ponto de curva; clique no primeiro ponto para fechar. |
 | **Estender linha** (E) | Arrasta a ponta de uma linha aberta para estender ou encurtar na mesma direção; um clique estende até a linha mais próxima. |
-| **Mão livre** (F) | Desenho livre que vira curva com pontos editáveis; mostra o comprimento total. |
+| **Mão livre** (H) | Desenho livre que vira curva com pontos editáveis; mostra o comprimento total. |
 | **Marcar pontos** (P) | O 1º clique pega o ponto mais próximo como referência e uma régua tracejada mede até o mouse; o 2º clique marca o ponto. Numa linha ou curva ele vira ponto de controle dela; fora, fica um ponto solto. L, A, C e P fixam a medida; Shift trava em 45°; D apaga os pontos soltos. |
 | **Texto** (T) | Textos no desenho, que também podem ser girados. |
-| **Digitalização de moldes** | Foto do molde de papel: calibra a escala com uma medida conhecida e detecta o contorno. |
+| **Digitalização de moldes** (W) | Foto do molde de papel: calibra a escala com uma medida conhecida e detecta o contorno. |
 | **Redefinir perímetros** (X) | Muda o comprimento de uma linha (bidirecional, unidirecional ou mantendo as pontas). |
 | **Gerar molde** (M) | Transforma a área fechada em molde, com nome, tamanho do texto, sentido do fio e rotação permitida. |
 | **Fita métrica** (N) | Passe o mouse sobre linhas e margens para ver a medida. Cada clique cria uma régua emendada, com o total. |
 | **Margem de costura** (1) | Margem inicial e final em cada linha, para fora ou para dentro (para dentro, o molde recua e a linha de corte fica no contorno de antes). Acabamento reto, chanfrado, sem acabamento ou redondo. Clicar na margem de um lado a remove. |
 | **Margem de segurança** (S) | Espaço livre em volta da linha de corte, para separar as peças no encaixe e no corte. |
-| **Bainha** | Largura, número de dobras e piques nas dobras. |
-| **Desdobrar / Dobrar molde** | Espelha a peça sobre uma linha reta ou dobra uma peça simétrica ao meio. |
+| **Bainha** (7) | Largura, número de dobras e piques nas dobras. |
+| **Desdobrar / Dobrar molde** (2 / 3) | Espelha a peça sobre uma linha reta ou dobra uma peça simétrica ao meio. |
 | **Marcar pique** (4) | Piques no contorno (traço, T, V, contínuo, seta, texto ou tamanho), a uma medida exata (P, L, A ou C), redistribuídos numa linha, e marcações internas. |
-| **Pence** (D) | Abertura e profundidade; pode abrir no contorno ou só marcar as pernas. |
+| **Pence** (8) | Abertura e profundidade; pode abrir no contorno ou só marcar as pernas. |
 | **Agrupar moldes** | Junta dois moldes por uma costura (por exemplo, frente e costas), para encaixar e cortar juntos. |
-| **Alinhar pontos** (9) | Alinha pontos na horizontal ou na vertical. |
-| **Linhas paralelas** | Cria uma linha paralela a uma distância definida. |
-| **Conferência por aproximação** | Encosta a linha de uma peça na de outra e compara os comprimentos. |
-| **Tabela de medidas** | Tabela de medidas por tamanho, que pode ficar fixa na tela. |
+| **Alinhar pontos** (Y) | Alinha pontos na horizontal ou na vertical. |
+| **Linhas paralelas** (6) | Cria uma linha paralela a uma distância definida. |
+| **Conferência por aproximação** (B) | Encosta a linha de uma peça na de outra e compara os comprimentos. |
+| **Tabela de medidas** (D) | Tabela de medidas por tamanho, que pode ficar fixa na tela. |
 | **Gradação** (5) | Lista de tamanhos com cor; define o deslocamento X/Y de cada ponto por tamanho. |
 | **Gradação automática** (A) | Calcula a gradação a partir de quanto a peça cresce em largura e altura. |
-| **Copiar gradação** | Copia a gradação (X, Y ou os dois) de um ponto para outros. |
+| **Copiar gradação** (9) | Copia a gradação (X, Y ou os dois) de um ponto para outros. |
 
 ### Barra de cima
 
-Mais zoom, menos zoom, desfazer, refazer, ímã, guias, grade, mostrar medidas, esconder pontos, suavizar curvas, redimensionar, rotacionar, inverter na vertical, inverter na horizontal, reorganizar painéis, travar, fotografar moldes na tela, encaixe, imprimir, remover, modo celular/computador e tema claro/escuro.
+Na mesma ordem do molde.me: mais zoom, menos zoom, desfazer, refazer, ímã, guias, mostrar medidas, esconder pontos, suavizar curvas, redimensionar, rotacionar, inverter na vertical, inverter na horizontal, reorganizar painéis, travar, fotografar moldes na tela, imprimir e remover. Depois vêm grade e encaixe (só nossos), modo celular/computador e tema claro/escuro.
 
 - **Redimensionar** e **Rotacionar** ligam alças em volta da seleção. Na rotação, arraste os arcos dos cantos para girar em volta do eixo (a cruz do centro, que também pode ser arrastada); Shift gira de 15 em 15°.
 - **Encaixe** distribui as peças de todos os tamanhos no tecido (aberto, par ou tubular) e mostra o comprimento de tecido, o aproveitamento e o tempo de corte. O resultado vira um molde novo para imprimir em plotter ou exportar.
@@ -131,18 +131,21 @@ Contornos fechados viram moldes, e o resto vira linhas de construção.
 
 | Tecla | Ação |
 |---|---|
-| `V` `R` `O` `L` `C` `E` `F` `P` `T` | Selecionar, Retângulo, Elipse, Linha, Curva, Estender linha, Mão livre, Marcar pontos, Texto |
+| `V` `R` `O` `L` `C` `E` `H` `P` `T` `W` | Selecionar, Retângulo, Elipse, Linha, Curva, Estender linha, Mão livre, Marcar pontos, Texto, Digitalização |
 | `X` `M` `N` | Redefinir perímetros, Gerar molde, Fita métrica |
-| `1` `S` `4` `D` | Margem de costura, Margem de segurança, Marcar pique, Pence |
-| `9` `5` `A` | Alinhar pontos, Gradação, Gradação automática |
-| `I` / `G` | Ímã / guias |
+| `1` `S` `7` `2` `3` | Margem de costura, Margem de segurança, Bainha, Desdobrar, Dobrar |
+| `4` `8` | Marcar pique, Pence |
+| `Y` `6` `B` `D` | Alinhar pontos, Linhas paralelas, Conferência, Tabela de medidas |
+| `5` `A` `9` | Gradação, Gradação automática, Copiar gradação |
+| `U` / `I` / `G` | Ímã / guias / fotografar moldes na tela |
 | `Enter` | Termina curva ou sequência de réguas |
 | `Esc` | Cancela e volta para Selecionar |
 | `Delete` | Remove o ponto ou elemento selecionado |
 | `Setas` | Move 1 mm (com Shift, 1 cm) |
 | `Ctrl+Z` / `Ctrl+Y` | Desfazer / refazer |
 | `Ctrl+D` | Duplicar |
-| `Ctrl+K` / `Ctrl+L` | Inverter na vertical / na horizontal |
+| `Ctrl+K` / `Ctrl+L` | Inverter na vertical (espelha da esquerda para a direita) / na horizontal (de cima para baixo) |
+| `Ctrl+P` | Imprimir |
 | `+` `-` `0` | Mais zoom, menos zoom, ajustar à tela |
 | `?` | Ajuda |
 | `Espaço` + arrastar | Mover a tela (ou botão do meio/direito do mouse) |
