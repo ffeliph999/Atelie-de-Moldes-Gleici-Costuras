@@ -1149,7 +1149,7 @@ function shapesSVG(px,exp){
       h+=`<path class="${C('ghost')}" d="${pathD(P,true)}" stroke="${col}" stroke-width="${px*1.1}"/>`;
       // seam allowance of each size: always in exports, on screen with "Mostrar área da margem de costura"
       // like molde.me, the allowance of every size is drawn in that size's color
-      if(sh.piece&&(!exp||!XO||XO.margem)){const SP=seamPoly(sh,P);if(SP)h+=`<path class="${C('seam')}" d="${polyD(SP)}" style="stroke:${col}" stroke-width="${px}" stroke-dasharray="${6*px} ${4*px}"/>`}
+      if(false){const SP=seamPoly(sh,P);if(SP)h+=`<path class="${C('seam')}" d="${polyD(SP)}" style="stroke:${col}" stroke-width="${px}" stroke-dasharray="${6*px} ${4*px}"/>`}
       const b=boxOf(sample({...sh,pts:P})); if(!(exp&&XO&&!XO.textos)) h+=`<text class="${C('glbl')}" x="${b.x+b.w+.3}" y="${b.y+b.h}" font-size="${exp?.7:Math.max(.6,11*px)}" fill="${col}">${esc(sz.name)}</text>`; } }
   // "Mostrar área da margem de costura": dotted blue line around the space the largest size will take
   if(!exp&&opt.seamArea) for(const sh of doc.shapes){ if(sh.type!=='path'||!sh.piece||!sh.closed||isHid(sh)) continue; let best=null;
@@ -3012,7 +3012,7 @@ document.querySelectorAll('.drawer [data-act]').forEach(b=>b.addEventListener('c
 
 /* ---------- export / print / photo ---------- */
 const XSTYLE='.x-piece{fill:none;stroke:#111}.x-cons{fill:none;stroke:#888}.x-seam,.x-hemline{fill:none;stroke:#c0392b}.x-grain{fill:none;stroke:#111}.x-notch{stroke:#111;fill:none;color:#111}.x-lbl,.x-txt{fill:#111;font-family:Arial,Helvetica,sans-serif}.x-ptm{stroke:#111;fill:none}.x-ptc{fill:#111}.x-ghost{fill:none}.x-glbl{font-family:Arial,Helvetica,sans-serif}';
-function gradedBox(s,z){const P=gradedPts(s,z);return boxOf(seamPoly(s,P)||sample({...s,pts:P}))}
+function gradedBox(s,z){const P=gradedPts(s,z);return boxOf(sample({...s,pts:P}))}
 function contentBox(){return unionBox(doc.shapes.filter(s=>s.type!=='image').map(s=>{if(s.type==='path'&&s.piece&&s.closed){const bs=[boxOf(seamPoly(s)||sample(s))];for(const z of doc.sizes)if(!z.base&&hasGrade(s))bs.push(gradedBox(s,z));return unionBox(bs)}return shapeBox(s)}))}
 function exportSVG(){const W=doc.meta.largura,H=doc.meta.altura;
   return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}cm" height="${H}cm" viewBox="0 0 ${W} ${H}">\n<title>${esc(doc.meta.nome)}</title>\n<style>${XSTYLE}</style>\n${XO&&XO.bordas?`<rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="#888" stroke-width="0.03"/>\n`:''}${shapesSVG(.025,true)}\n</svg>`}
@@ -3032,7 +3032,7 @@ function exportDXF(){
   for(const s of doc.shapes){
     if(s.type==='path'){ if(s.piece&&s.closed){const S=seamPoly(s),cutOnSeam=S&&(!XO||XO.margem);poly(cutOnSeam?sample(s):withContinuousNotches(s,sample(s)),true,'CONTORNO');if(cutOnSeam)poly(withContinuousNotches(s,S),true,'COSTURA');const b=boxOf(s.pts),nm=!XO||XO.nome?(s.name||'Molde'):'',tx=!XO||XO.textos?'cortar '+(s.qtd||1)+'x'+(s.fold?' na dobra':''):'',lb=[nm,tx].filter(Boolean).join(' - ');if(lb)text(b.x+b.w/2,b.y+b.h/2,s.labelSize||1.4,lb,'TEXTO');
         const G=grainGeom(s,lb?.932*(+s.labelSize||1.4):0);if(!s.grainHide)line({x:G.x1,y:G.y1},{x:G.x2,y:G.y2},'FIO');
-        if(hasGrade(s))for(const z of doc.sizes)if(!z.base){const P=gradedPts(s,z),nm=ascii(z.name).replace(/\s+/g,'_');poly(sample({...s,pts:P}),true,'TAM_'+nm);const SP=seamPoly(s,P);if(SP&&(!XO||XO.margem))poly(SP,true,'COSTURA_TAM_'+nm)}}
+        if(hasGrade(s))for(const z of doc.sizes)if(!z.base){const P=gradedPts(s,z),nm=ascii(z.name).replace(/\s+/g,'_');poly(sample({...s,pts:P}),true,'TAM_'+nm);}}
       else if(!XO||XO.tracejadas||s.parent) poly(sample(s),s.closed,s.parent?'INTERNAS':'CONSTRUCAO'); }
     else if(s.type==='notch'&&s.icon==='continuo'){} // already cut into the outline
     else if(s.type==='notch'){notchGeo(s).forEach(([a,b])=>line(a,b,'PIQUES'));if(s.icon==='texto'){const NT=notchText(s);text(NT.x,NT.y,NT.fs,NT.t,'PIQUES')}}
@@ -3275,7 +3275,7 @@ function drawPDF(pdf,ox,oy){
         continue; }
       if(!s.closed) continue;
       // like molde.me: 1 pt lines, the cutting line (allowance) solid and the stitching line (the molde) dashed 3 pt
-      if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(LW); const P=gradedPts(s,z),SP=PR.margem?seamPoly(s,P):null;
+      if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(LW); const P=gradedPts(s,z),SP=null;
         if(SP){poly(SP,true);pdf.setLineDashPattern(D3,0)} poly(sample({...s,pts:P}),true); pdf.setLineDashPattern([],0);
         if(PR.textos){const b=boxOf(sample({...s,pts:P}));pdf.setTextColor(r,g,bl);pdf.setFontSize(PT(.6));pdf.setFont('courier','normal');pdf.text(z.name,X(b.x+b.w+.25),Y(b.y+b.h))} }
       ink();
