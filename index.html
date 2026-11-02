@@ -3195,12 +3195,12 @@ function nestToDoc(){const R=nestRes;if(!R)return;const src=doc,nd=newDoc({nome:
 /* print: tiled PDF in real scale, pages numbered row-column from the project corner */
 const PAPER={a4:[21,29.7,'A4'],a3:[29.7,42,'A3'],a2:[42,59.4,'A2'],a1:[59.4,84.1,'A1'],a0:[84.1,118.9,'A0'],a5:[14.8,21,'A5'],
   letter:[21.59,27.94,'Carta'],legal:[21.59,35.56,'Ofício'],tabloid:[27.94,43.18,'Tabloide']};
-const PR={nome:true,textos:true,margem:true,brancas:false,tracejadas:false,base:false,paper:'a4',custom:false,m:{t:.5,r:.5,b:.5,l:.5},orient:'p',roll:91.4,cw:50,ch:70};
+const PR={nome:true,textos:true,margem:true,cons:true,brancas:false,tracejadas:false,base:false,paper:'a4',custom:false,m:{t:.5,r:.5,b:.5,l:.5},orient:'p',roll:91.4,cw:50,ch:70};
 try{Object.assign(PR,JSON.parse(localStorage.getItem('atelie-print')||'{}'))}catch(e){}
 const PRPROPS=[['nome','Nome do molde','<path d="M7 4l-3 4v12h16V8l-3-4"/><path d="M9 4c0 2 1.3 3 3 3s3-1 3-3"/>'],['textos','Textos do molde','<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 14h7M9 17h5"/>'],
-  ['margem','Margem de costura','<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 8h8v8H8z" stroke-dasharray="2 1.6"/>'],['brancas','Páginas em branco','<path d="M6 3h9l4 4v14H6z"/>'],
+  ['margem','Margem de costura','<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 8h8v8H8z" stroke-dasharray="2 1.6"/>'],['cons','Linhas de construção','<path d="M4 20L20 4" stroke-dasharray="3 2"/><path d="M4 6c6 0 4 12 16 12"/>'],['brancas','Páginas em branco','<path d="M6 3h9l4 4v14H6z"/>'],
   ['tracejadas','Linhas tracejadas','<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/>'],['base','Mostrar tamanho base','<rect x="7" y="3" width="13" height="13" rx="1"/><path d="M4 7v13h13"/>']];
-const PRTIPS={margem:'Imprime a linha tracejada da margem de costura em volta de cada molde.',tracejadas:'Imprime a borda de cada folha tracejada, para guiar o corte e a colagem.',base:'Imprime só o tamanho base, sem os tamanhos da gradação.'};
+const PRTIPS={cons:'Imprime os rascunhos feitos com Linha, Curva, Mão livre, Retângulo e Elipse (em cinza tracejado).',margem:'Imprime a linha tracejada da margem de costura em volta de cada molde.',tracejadas:'Imprime a borda de cada folha tracejada, para guiar o corte e a colagem.',base:'Imprime só o tamanho base, sem os tamanhos da gradação.'};
 function savePR(){try{localStorage.setItem('atelie-print',JSON.stringify(PR))}catch(e){}}
 function prMargins(){return PR.custom?PR.m:{t:.5,r:.5,b:.5,l:.5}}
 // page size for the chosen paper; plotter = roll width × content height, total = one page around everything
@@ -3225,7 +3225,7 @@ function printPlan(){
     const used=boxes.some(q=>q.x<tx+tw&&q.x+q.w>tx&&q.y<ty+th&&q.y+q.h>ty); tiles.push({c,r,tx,ty,used,lbl:`${r0+r+1}-${c0+c+1}`})}
   return {b,W,H,m,tw,th,cols,rows,tiles,name:ps.name};
 }
-function printBoxes(){return doc.shapes.filter(s=>s.type!=='image'&&!(s.type==='path'&&!s.piece&&!s.parent)&&s.type!=='point').map(s=>{
+function printBoxes(){return doc.shapes.filter(s=>s.type!=='image'&&!(s.type==='path'&&!s.piece&&!s.parent&&!PR.cons)&&s.type!=='point').map(s=>{
   if(s.type==='path'&&s.piece&&s.closed){const bs=[boxOf(seamPoly(s)||sample(s))];if(!PR.base)for(const z of doc.sizes)if(!z.base&&hasGrade(s))bs.push(gradedBox(s,z));return unionBox(bs)}return shapeBox(s)})}
 function openPrint(){renderPrintUI();openModal('printModal')}
 function renderPrintUI(){
@@ -3270,7 +3270,9 @@ function drawPDF(pdf,ox,oy){
   for(const s of doc.shapes){
     ink();
     if(s.type==='path'){
-      if(!s.piece){ if(s.parent){pdf.setLineWidth(.02);poly(sample(s),s.closed)} continue; }
+      if(!s.piece){ if(s.parent){pdf.setLineWidth(.02);poly(sample(s),s.closed)}
+        else if(PR.cons){pdf.setDrawColor(136,136,136);pdf.setLineWidth(LW*.7);pdf.setLineDashPattern([4*LW,3*LW],0);poly(sample(s),s.closed);pdf.setLineDashPattern([],0)}
+        continue; }
       if(!s.closed) continue;
       // like molde.me: 1 pt lines, the cutting line (allowance) solid and the stitching line (the molde) dashed 3 pt
       if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(LW); const P=gradedPts(s,z),SP=PR.margem?seamPoly(s,P):null;
