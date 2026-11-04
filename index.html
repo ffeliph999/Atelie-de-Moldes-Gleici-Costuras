@@ -31,7 +31,7 @@
   --paper:#1b2320; --grid:rgba(120,200,180,.07); --grid-major:rgba(120,200,180,.19);
   --piece:rgba(76,187,166,.09); --construct:#8b9891; --seam:#ef7d6d; --warn:#ef7d6d; --hl:#f0b54a;
   --shadow:0 14px 44px rgba(0,0,0,.55); color-scheme:dark}
-/* extra themes: purple dark (like molde.me's dark mode) and classic Windows grey */
+/* extra themes: purple dark and classic Windows grey */
 :root[data-theme="roxo"]{
   --desk:#221f2b; --chrome:#2b2735; --chrome-2:#332e3f; --ink:#ece8f4; --muted:#a59db8; --line:#3f3950;
   --accent:#8f74dc; --accent-ink:#ffffff; --accent-soft:rgba(143,116,220,.2); --accent-line:rgba(143,116,220,.55);
@@ -661,7 +661,7 @@ let tape={items:[]};
 let tapeCur=null, tapeChains=[], tapeHover=null; // ruler chains drawn with the tape tool
 const pointers=new Map(); let pinch=null;
 let resizeMode=false; // top-bar "Redimensionar" toggles drag handles around the selection
-let rotMode=false, rotPiv=null, rotGrp=null; // top-bar "Rotacionar": corner arcs and a movable axis (rotPiv) like molde.me; rotGrp = turned box of a multi-selection
+let rotMode=false, rotPiv=null, rotGrp=null; // top-bar "Rotacionar": corner arcs and a movable axis (rotPiv); rotGrp = turned box of a multi-selection
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
 const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genGrainA:0,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
@@ -746,7 +746,7 @@ const I={
 const ic=n=>`<svg viewBox="0 0 24 24" aria-hidden="true">${I[n]||''}</svg>`;
 
 const RAIL=[
- // same places as molde.me's rail (two columns, read left to right; '-' = divider)
+ // tool rail layout (two columns, read left to right; '-' = divider)
  ['select','Selecionar','V'],['rect','Retângulo','R'],['ellipse','Elipse','O'],['line','Linha','L'],['curve','Curva','C'],['extend','Estender linha','E'],
  ['pencil','Mão livre','H'],['point','Marcar pontos','P'],['text','Texto','T'],['digitize','Digitalização de moldes','W'],['perim','Redefinir perímetros','X'],'-',
  ['generate','Gerar molde','M'],['tape','Fita métrica','N'],['seam','Margem de costura','1'],['hem','Bainha','7'],['unfold','Desdobrar molde','2'],['fold','Dobrar molde','3'],
@@ -754,7 +754,7 @@ const RAIL=[
  ['grade','Gradação','5'],['gradeAuto','Gradação automática','A'],['gradeCopy','Copiar gradação','9'],['gradeGroup','Agrupar gradação (selecione os moldes)','','act'],['group','Agrupar moldes'],'-',
  ['safety','Margem de segurança','S']];
 const TNAME={};RAIL.forEach(r=>{if(r!=='-')TNAME[r[0]]=r[1]});TNAME.calibrate='Digitalização de moldes';
-// same order as molde.me's top bar (no dividers); Grade and Encaixe, which molde.me does not have there, come last
+// top bar order (no dividers); Grade and Encaixe come last
 const TOP=[['menu','Meus moldes, novo molde, exportar'],['zin','Mais zoom (+)'],['zout','Menos zoom (−)'],['undo','Desfazer (Ctrl+Z)'],['redo','Refazer (Ctrl+Y)'],
  ['snap','Ímã (U)'],['guides','Guias (I)'],['measures','Mostrar medidas'],['hidePts','Esconder pontos'],
  ['smooth','Suavizar curvas'],['resize','Redimensionar'],['rotate','Rotacionar'],['flipV','Inverter na vertical (Ctrl+K)'],['flipH','Inverter na horizontal (Ctrl+L)'],
@@ -896,7 +896,7 @@ function seamPoly(sh,ptsOverride){
     if(p.corner&&rd&&Math.abs(det)>.05&&d1>0&&d2>0){const a=Q[k0],b=Q[(k+1)%n],cr=(p.x-a.x)*(b.y-p.y)-(p.y-a.y)*(b.x-p.x);
       if(Math.sign(cr)===Math.sign(signedArea(Q))){const da=Math.atan2(det,n1.x*n2.x+n1.y*n2.y),st=Math.max(2,Math.ceil(Math.abs(da)/(Math.PI/24))),a1=Math.atan2(n1.y,n1.x);
         for(let j=0;j<=st;j++){const t=j/st,r=d1+(d2-d1)*t,an=a1+da*t;out.push({x:p.x+Math.cos(an)*r,y:p.y+Math.sin(an)*r,seg:segOut})}continue}}
-    // on a curve point where the allowance changes value (e.g. 2 → 1), make a straight step like molde.me instead of a twisted miter
+    // on a curve point where the allowance changes value (e.g. 2 → 1), make a straight step instead of a twisted miter
     if(!p.corner&&Math.abs(d1-d2)>1e-4){out.push({x:p.x+n1.x*d1,y:p.y+n1.y*d1,seg:segOut},{x:p.x+n2.x*d2,y:p.y+n2.y*d2,seg:segOut});continue}
     let vx,vy; if(Math.abs(det)<1e-3){const d=Math.abs(d1)>Math.abs(d2)?d1:d2;vx=n2.x*d;vy=n2.y*d}else{vx=(d1*n2.y-n1.y*d2)/det;vy=(n1.x*d2-d1*n2.x)/det}
     const m=Math.hypot(vx,vy),lim=3*Math.max(Math.abs(d1),Math.abs(d2),.01); if(m>lim){vx*=lim/m;vy*=lim/m}
@@ -1064,7 +1064,7 @@ function dxfToShapes(D,fname,RUL){
   const b=unionBox(out.map(s=>s.type==='path'?boxOf(s.pts):{x:s.x,y:s.y-1,w:1,h:1}));if(b){const dx=2-b.x,dy=2-b.y;out.forEach(s=>{if(s.pts)s.pts.forEach(p=>{p.x=r3(p.x+dx);p.y=r3(p.y+dy)});else{s.x=r3(s.x+dx);s.y=r3(s.y+dy)}})}
   return {shapes:out,box:b,sizes}}
 function normalizeDoc(d){d.meta=d.meta||{};d.shapes=d.shapes||[];
-  // ellipses made before control points existed: their 4 points are control points, as in molde.me
+  // ellipses made before control points existed: their 4 points are control points
   d.shapes.forEach(s=>{if(s.type==='path'&&s.pts.length===4&&s.pts.every(p=>p.k&&p.s&&p.c==null))s.pts.forEach(p=>p.c=true)});if(!d.sizes||!d.sizes.length)d.sizes=[{id:uid(),name:'BASE',color:'#5b4b8a',base:true}];d.medidas=d.medidas||[];d.autoGrade=d.autoGrade||{};return d}
 function newDoc(meta){return normalizeDoc({id:uid(),meta:{nome:meta.nome||'Sem título',tecido:meta.tecido||'',obs:meta.obs||'',largura:+meta.largura||100,altura:+meta.altura||100,imagem:meta.imagem||null},shapes:[],updated:Date.now()})}
 function openDoc(id){lib.current=id;doc=lib.docs[id];sel.clear();selPoint=null;undoS=[];redoS=[];pick={};temp=null;measure=null;tape={items:[]};fit();$('#docTitle').value=doc.meta.nome;setTool('select');renderPanel();scheduleSave();updateButtons()}
@@ -1148,7 +1148,7 @@ function shapesSVG(px,exp){
     for(const sz of doc.sizes){ if(sz.base) continue; const P=gradedPts(sh,sz); const col=sz.color;
       h+=`<path class="${C('ghost')}" d="${pathD(P,true)}" stroke="${col}" stroke-width="${px*1.1}"/>`;
       // seam allowance of each size: always in exports, on screen with "Mostrar área da margem de costura"
-      // like molde.me, the allowance of every size is drawn in that size's color
+      // the allowance of every size is drawn in that size's color
       if(false){const SP=seamPoly(sh,P);if(SP)h+=`<path class="${C('seam')}" d="${polyD(SP)}" style="stroke:${col}" stroke-width="${px}" stroke-dasharray="${6*px} ${4*px}"/>`}
     }
     if(!(exp&&XO&&!XO.textos)){const gfs=exp?.7:Math.max(.6,11*px);for(const l of gradeLblList(sh,gfs))h+=`<text class="${C('glbl')}" x="${l.x}" y="${l.y}" font-size="${l.fs||gfs}" fill="${l.z.color}">${esc(l.z.name)}</text>`} }
@@ -1174,7 +1174,7 @@ function shapesSVG(px,exp){
       if(sh.piece&&sh.closed) h+=decor(sh,px,C,exp);
     } else if(sh.type==='notch'){ h+=notchSVG(sh,px,exp,on);
     } else if(sh.type==='mark'){ h+=markSVG(sh,px,exp,on);
-    } else if(sh.type==='point'){ const r=exp?.12:3.2*px; const m=`<path class="${C('ptm')}" d="M${sh.x-r} ${sh.y-r}h${2*r}v${2*r}h${-2*r}z" stroke-width="${px*1.2}" style="fill:none"/>`;   // a small square, like molde.me
+    } else if(sh.type==='point'){ const r=exp?.12:3.2*px; const m=`<path class="${C('ptm')}" d="M${sh.x-r} ${sh.y-r}h${2*r}v${2*r}h${-2*r}z" stroke-width="${px*1.2}" style="fill:none"/>`;   // a small square
       h+=exp?m:`<g data-id="${sh.id}" class="${on?'sel':''}"><circle class="hitf" cx="${sh.x}" cy="${sh.y}" r="${9*px}"/>${m}</g>`;
     } else if(sh.type==='text'){ if(!exp&&textEd&&textEd.id===sh.id) continue; if(exp&&XO&&!XO.textos) continue; const TL=String(sh.text).split('\n');   // one line per row, 1.2× the size apart
       h+=`<text ${exp?'':`data-id="${sh.id}" `}class="${C('txt')}${on?' sel':''}" x="${sh.x}" y="${sh.y}" font-size="${sh.size}"${+sh.rotNow?` transform="rotate(${+sh.rotNow} ${sh.x} ${sh.y})"`:''}>${TL.length<2?esc(sh.text):TL.map((l,k)=>`<tspan x="${sh.x}" dy="${k?sh.size*1.2:0}">${esc(l)||' '}</tspan>`).join('')}</text>`; }
@@ -1191,7 +1191,7 @@ function hemLines(sh,px,C){
   return h;
 }
 // grain line: anchored at the most interior point and sized to the space inside the piece along its direction
-// grain line like molde.me: 60% of the chord through the piece, moved sideways by `off` (to make room for the texts)
+// grain line: 60% of the chord through the piece, moved sideways by `off` (to make room for the texts)
 function grainGeom(sh,off=0){
   const P=sample(sh),b=boxOf(P),n=P.length; let best={x:b.x+b.w/2,y:b.y+b.h/2},bd=-1;
   for(let i=1;i<16;i++)for(let j=1;j<16;j++){const q={x:b.x+b.w*i/16,y:b.y+b.h*j/16};if(!inPoly(q,P))continue;
@@ -1204,7 +1204,7 @@ function grainGeom(sh,off=0){
   const m=(tp+tn)/2,hl=(tp-tn)/2*.6,x1=best.x+ux*(m-hl),y1=best.y+uy*(m-hl),x2=best.x+ux*(m+hl),y2=best.y+uy*(m+hl),L=Math.hypot(x2-x1,y2-y1);
   return {cx:best.x,cy:best.y,mx:mid.x,my:mid.y,ux,uy,x1,y1,x2,y2,L,ah:Math.min(.606,Math.max(.3,L*.12))};
 }
-// piece texts like molde.me: they run along the grain, beside it, centred on the piece
+// piece texts: they run along the grain, beside it, centred on the piece
 // (a single 1,4 cm name: grain 1,3 cm to one side of the centre, baseline 0,4 cm)
 function labelLayout(sh,lines){
   const fs=+sh.labelSize||1.4,G=grainGeom(sh,lines.length?.932*fs:0);
@@ -1517,7 +1517,7 @@ function toolPanel(t){
       rowI('Acabamento:',oSel('seamCf',[['reto','Reto'],['chanfro','Chanfrado'],['sem','Sem acabamento'],['redondo','Redondo']]))+
       (()=>{const sp=pick.seamPiece&&byId(pick.seamPiece);return `<div class="acts" style="display:grid">${btn('seamAll','Aplicar costura em todo o painel','primary',!sp)}${btn('seamRemove','Remover somente a costura','primary',!sp)}${btn('seamHemRemove','Remover costura e bainha','primary',!sp)}${btn('seamDotted',sp&&sp.dotted?'Remover pontilhado do painel':'Aplicar pontilhado ao painel','primary',!sp)}</div>`+
         hint(sp?`Painel: <b>${esc(sp.name||'Molde')}</b>.`:'Os botões acima agem no painel escolhido: clique numa linha ou dentro de um molde.')})()+
-      hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>fora</b> do molde a margem vai para fora; <b>dentro</b>, o molde recua (a costura entra) e a linha de corte fica no contorno de antes, como no molde.me. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.')+
+      hint('Passe o mouse sobre uma linha do molde para ver a prévia. Com o mouse <b>fora</b> do molde a margem vai para fora; <b>dentro</b>, o molde recua (a costura entra) e a linha de corte fica no contorno de antes. Clique para aplicar. Com <b>Final</b> preenchido, a margem varia ao longo da linha.')+
       hint('Para tirar a margem de um lado só, clique em cima da <b>linha da margem</b> (o tracejado); ela fica vermelha antes do clique.'));
   case 'safety': { const n=doc.shapes.filter(s=>s.type==='path'&&s.piece&&hasSafety(s)).length;
     return sec('Margem de segurança',rowI('Distância:',oNum('safeD',.05,0),'cm')+
@@ -1844,7 +1844,7 @@ function constrain(a,w){const L0=dist(a,w),st=Math.PI/4,ang=Math.round(Math.atan
 let textEd=null; // {id|null, x, y, size, el, t0}
 function openTextEditor(o){
   closeTextEditor(true);
-  // a textarea: Enter starts a new line (like molde.me); Esc, Ctrl+Enter or a click outside finishes
+  // a textarea: Enter starts a new line; Esc, Ctrl+Enter or a click outside finishes
   const inp=document.createElement('textarea'); inp.className='texted'; inp.value=o.text||''; inp.setAttribute('aria-label','Texto'); inp.autocomplete='off'; inp.rows=1; inp.spellcheck=false;
   stage.appendChild(inp); textEd={id:o.id||null,x:o.x,y:o.y,size:+(o.size||opt.textSize)||1.4,el:inp,t0:performance.now()};
   inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();closeTextEditor(true)}else if(e.key==='Escape'){e.preventDefault();closeTextEditor(true)}});
@@ -1884,7 +1884,7 @@ function updateScrollbars(vw,vh){
 }
 const ELLIPSE_K=(4/3*(Math.SQRT2-1))/2; // bezier circle handle 0.5523·r over the 2r chord between neighbours
 // drag box corners; Shift makes it square (circle), Alt grows it from the first point as center
-// control points (molde.me "pontos de controle"): corners are control points unless turned off; curve points only when turned on (p.c)
+// control points ("pontos de controle"): corners are control points unless turned off; curve points only when turned on (p.c)
 const isCtl=p=>p.c!=null?!!p.c:!p.s;
 // the "line" that holds segment i: from one control point to the next (a closed outline with none is one run)
 function runOfSeg(sh,i){const P=sh.pts,n=P.length,segs=sh.closed?n:n-1,out=[i];let j=i;
@@ -1905,7 +1905,7 @@ function subdivideRun(sh,run,mode,val){
   for(let i=0;i<n;i++){if(drop.has(i))continue;out.push(P[i]);if(i===run[0])out.push(...NP)}
   sh.pts=out; return {lostG,loop};
 }
-// "Marcar pontos" like molde.me: the 1st click takes the nearest point as reference, a dashed ruler measures from it,
+// "Marcar pontos": the 1st click takes the nearest point as reference, a dashed ruler measures from it,
 // the 2nd click marks the point. On a line or curve it becomes a control point of that line; elsewhere a loose point.
 // L, A, C and P show the live measures; a ticked box fixes that measure. Shift: 45° steps.
 const PTK=['L','A','C','P'];
@@ -2094,7 +2094,7 @@ function clickGroup(w){
   if(!pick.ga||pick.ga.id===v.sh.id){pick.ga={id:v.sh.id,i:v.i};renderPanel();toast('Agora clique no ponto do segundo molde');return}
   const A=byId(pick.ga.id),B=v.sh; if(B.locked)return toast('O segundo molde está travado');
   mutate(()=>joinPieces(A,pick.ga.i,B,v.i)); pick={}; renderPanel(); toast(`Moldes agrupados: ${A.name||'Molde'} + ${B.name||'Molde'}`)}
-// like molde.me, an allowance goes on the whole line between two control points
+// an allowance goes on the whole line between two control points
 function seamRun(sh,i){return runOfSeg(sh,i)}
 // allowance a→b spread along the run by length (b = a when "Final" is empty).
 // A closed curve with no corners has no ends: it goes a (at the clicked line) → b (opposite side) → a, so it never jumps.
@@ -2108,7 +2108,7 @@ function seamSet(P,run,side,a,b,closed,at){
     p.e=r3(side*e0); if(Math.abs(e1-e0)>1e-6)p.e2=r3(side*e1); else delete p.e2; p.cf=opt.seamCf; delete p.hem});
   return P;
 }
-// like molde.me, an allowance "para dentro" pulls the stitching line in: the line moves inward by the width and the
+// an allowance "para dentro" pulls the stitching line in: the line moves inward by the width and the
 // allowance goes outward from it, so the cutting line stays where the outline was. The ends get a small step:
 // the old corner stays for the next line and a new point starts the recessed one.
 function recessRun(P0,run,f,loop){
@@ -2138,7 +2138,7 @@ function recessRun(P0,run,f,loop){
     const p=P[k];
     if(k===run[0]){const s={...p,e:0};delete s.e2;delete s.hem;if(s.s)s.ho=Z;out.push(s);const q=moved[0];setE(q,0);q.c=true;q.rs=1;if(q.s)q.hi=Z;out.push(q);continue}
     out.push(p)}
-  // a point with recessed lines on both sides (now or from an earlier click) recedes too, like in molde.me:
+  // a point with recessed lines on both sides (now or from an earlier click) recedes too:
   // its two steps (marked rs) collapse into one recessed point
   for(let k=0;k<out.length&&out.length>3;k++){const m=out.length,ia=(k-1+m)%m,ib=(k+1)%m,a=out[ia],p=out[k],b=out[ib];
     if(a.rs&&b.rs&&!p.rs&&dist(a,p)<5&&dist(b,p)<5){const q={...b,x:r3((a.x+b.x)/2),y:r3((a.y+b.y)/2),hi:a.hi};delete q.rs;
@@ -2206,7 +2206,7 @@ function foldPiece(sh){
 }
 function clickFold(w){const pc=pieceAt(w,x=>x.closed&&x.piece);if(!pc)return toast('Clique dentro de um molde');
   let ok=false; mutate(()=>{ok=foldPiece(pc)}); toast(ok?'Molde dobrado ao meio (cortar na dobra)':'Esse molde não tem exatamente dois pontos no eixo central');}
-/* Pence like molde.me. The position comes from a reference point and the ruler (L/A/C/P, as in Marcar pontos).
+/* Pence. The position comes from a reference point and the ruler (L/A/C/P, as in Marcar pontos).
    Without "Abrir molde": on the outline the dart gets its legs inside and a cap point on the outline; inside a molde
    it is a diamond (right click turns it). With "Abrir molde": first the vertex, then the dart on the outline; the side
    of the molde under the mouse turns around the vertex so the dart opens without the molde losing measure. */
@@ -2305,7 +2305,7 @@ function clickCheck(w){const s=nearestSeg(w,12,x=>x.closed);if(!s)return toast('
   const info={id:s.sh.id,i:s.i,len:segLen(s.sh.pts,s.i,true)};
   if(!pick.ca||pick.cb) {pick.ca=info;pick.cb=null} else if(info.id===pick.ca.id) toast('Escolha a linha de outra peça'); else pick.cb=info; renderPanel()}
 function runLen(sh,run){return run.reduce((a,i)=>a+segLen(sh.pts,i,sh.closed),0)}
-// like molde.me, the element is the whole curve between control points (corners)
+// the element is the whole curve between control points (corners)
 function clickPerim(w){const s=nearestSeg(w,12);if(!s)return toast('Clique numa linha');const run=runOfSeg(s.sh,s.i);
   pick.perim={id:s.sh.id,i:s.i,run,len:runLen(s.sh,run)};opt.perimLen=r3(pick.perim.len);renderPanel()}
 function redefineRun(sh,run,target,mode){
@@ -2351,7 +2351,7 @@ function clickTape(w){const s=nearestSeg(w,12);if(!s)return;
   const vals={};for(const sz of doc.sizes){const P=s.sh.closed&&hasGrade(s.sh)&&!sz.base?gradedPts(s.sh,sz):s.sh.pts;vals[sz.id]=segLen(P,s.i,s.sh.closed)}
   tape.items.push({label:s.sh.name?esc(s.sh.name)+' · linha':'Linha',vals,op:'+'});renderFloat();
   pick.tapeSegs=(pick.tapeSegs||[]).concat([{id:s.sh.id,i:s.i}]);renderPanel()}
-// "Moldes como referência" (molde.me): the lines of the moldes count as construction lines for a new molde
+// "Moldes como referência": the lines of the moldes count as construction lines for a new molde
 const genLine=sh=>(!sh.piece||opt.genRef)&&!sh.parent;
 function clickGenerate(w){
   const s=nearestSeg(w,10,genLine);
@@ -2579,7 +2579,7 @@ const ACT={
   rotateNum(b){if(!sel.size)return;showPop(b,`<b>Rotacionar</b>${rowI('Ângulo:',`<input type="number" id="rtA" step="1" value="90">`,'°')}<div class="acts">${btn('r-90','−90°')}${btn('r90','+90°')}${btn('r180','180°')}</div>${btn('rtGo','Aplicar','primary block')}`,
     p=>{p.querySelector('[data-act="r-90"]').onclick=()=>rotateSel(-90);p.querySelector('[data-act="r90"]').onclick=()=>rotateSel(90);p.querySelector('[data-act="r180"]').onclick=()=>rotateSel(180);
       p.querySelector('[data-act="rtGo"]').onclick=()=>{const a=parseFloat(p.querySelector('#rtA').value);if(isFinite(a))rotateSel(a)}})},
-  // as in molde.me: "Inverter na vertical" mirrors over a vertical axis (left ↔ right), "na horizontal" over a horizontal one
+  // "Inverter na vertical" mirrors over a vertical axis (left ↔ right), "na horizontal" over a horizontal one
   flipV(){const b=selBox();if(!b)return;const cx=b.x+b.w/2;mutate(()=>xform(new Set(sel),p=>({x:2*cx-p.x,y:p.y}),{grain:g=>180-g,vec:(x,y)=>({x:-x,y}),rotF:r=>-r}))},
   flipH(){const b=selBox();if(!b)return;const cy=b.y+b.h/2;mutate(()=>xform(new Set(sel),p=>({x:p.x,y:2*cy-p.y}),{grain:g=>-g,vec:(x,y)=>({x,y:-y}),rotF:r=>-r}))},
   arrange, lock(){const ss=selShapes();if(!ss.length)return;const all=ss.every(s=>s.locked);mutate(()=>ss.forEach(s=>s.locked=!all));toast(all?'Destravado':'Travado')},
@@ -2630,7 +2630,7 @@ const ACT={
   perimApply(){const p=pick.perim,sh=p&&byId(p.id);if(!sh)return;if(sh.locked)return toast('Molde travado');let ok=false;mutate(()=>{ok=redefineRun(sh,p.run||[p.i],+opt.perimLen,opt.perimMode)});if(ok){pick.perim=null;renderPanel();toast('Comprimento redefinido')}},
   genApply(){const r=pick.region;if(!r)return;const srcId=pick.regionSrc;const id=uid();
     mutate(()=>{const piece={id,type:'path',piece:true,closed:true,pts:r.map(p=>{const q={x:r3(p.x),y:r3(p.y),s:!!p.s};if(p.k!=null)q.k=p.k;return q}),name:opt.genName||'Molde '+(doc.shapes.filter(s=>s.piece).length+1),labelSize:+opt.genText,grainA:opt.genGrain==='outro'?norm360(+opt.genGrainA||0):+opt.genGrain,rot:opt.genRot,qtd:Math.max(1,Math.round(+opt.genQtd||1)),par:!!opt.genPar,fold:!!opt.genFold,seam:0};
-      // like molde.me the molde is a new piece: the construction lines stay where they are and the molde comes out
+      // the molde is a new piece: the construction lines stay where they are and the molde comes out
       // 5 cm to the right and down, so both are visible (in place when the lines are deleted)
       doc.shapes.push(piece);
       if(opt.genDel){const pb=boxOf(piece.pts);doc.shapes=doc.shapes.filter(s=>!(s.type==='path'&&!s.piece&&!s.parent&&(()=>{const b=shapeBox(s);return b.x<pb.x+pb.w+.5&&b.x+b.w>pb.x-.5&&b.y<pb.y+pb.h+.5&&b.y+b.h>pb.y-.5})()))}
@@ -2670,7 +2670,7 @@ const ACT={
   gradeZero(){const gp=gradePoint&&byId(gradePoint.id);if(!gp)return;mutate(()=>{delete gp.pts[gradePoint.i].g});toast('Ponto zerado')},
   gradeClearPiece(){const gp=gradePoint&&byId(gradePoint.id);if(!gp)return;mutate(()=>gp.pts.forEach(p=>{delete p.g}));toast('Gradação removida do painel')},
   seamHemRemove(){const sh=byId(pick.seamPiece);if(!sh)return;mutate(()=>{sh.seam=0;sh.pts.forEach(p=>{delete p.e;delete p.e2;delete p.cf;delete p.hem})});toast('Costura e bainha removidas')},
-  // like molde.me: the allowance joins the piece (the cut line becomes the outline), drawn dotted
+  // the allowance joins the piece (the cut line becomes the outline), drawn dotted
   seamDotted(){const sh=byId(pick.seamPiece);if(!sh)return;const S=seamPoly(sh);
     if(sh.dotted||!S){mutate(()=>{sh.dotted=!sh.dotted});return}
     const lostG=hasGrade(sh);let ring=S.map(q=>({x:q.x,y:q.y}));ring=rdp(ring.concat([{...ring[0]}]),.03).slice(0,-1);
@@ -2678,7 +2678,7 @@ const ACT={
     toast(lostG?'Margem juntada ao molde (a gradação deste molde foi removida)':'Margem juntada ao molde, contorno pontilhado')},
   pieceVis(b){const s=byId(b.dataset.id);mutate(()=>{s.hidden=!s.hidden;if(s.hidden)sel.delete(s.id)})},
   smoothRun(){if(!selPoint)return;const sh=byId(selPoint.id);if(!sh||sh.locked)return;
-    // two neighbour points chosen: the stretch between them becomes a straight line (as in molde.me)
+    // two neighbour points chosen: the stretch between them becomes a straight line
     {const L=selIdx(),n=sh.pts.length;if(L.length===2&&((L[1]-L[0]+n)%n===1||(L[0]-L[1]+n)%n===1)){mutate(()=>L.forEach(k=>{sh.pts[k].s=false}));return toast('Trecho transformado em reta')}}const segs=sh.closed?sh.pts.length:sh.pts.length-1,i=Math.min(selPoint.i,segs-1),run=runOfSeg(sh,i),n=sh.pts.length;
     // one segment between two points becomes straight; a longer curve gets all its inner points smooth
     mutate(()=>{if(run.length===1){sh.pts[i].s=false;sh.pts[(i+1)%n].s=false}else run.slice(1).forEach(j=>{sh.pts[j].s=true})});toast(run.length===1?'Trecho transformado em reta':'Curva suavizada')},
@@ -2931,10 +2931,10 @@ svg.addEventListener('contextmenu',e=>e.preventDefault());
 svg.addEventListener('pointerleave',()=>{if(!drag){cursorW=null;cursorS=null;render()}});
 svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect();zoomAt(view.scale*Math.exp(-e.deltaY*(e.ctrlKey?.01:.0016)),e.clientX-r.left,e.clientY-r.top)},{passive:false});
 svg.addEventListener('dblclick',e=>{
-  // Gerar molde: a double click inside an area makes the molde at once (molde.me)
+  // Gerar molde: a double click inside an area makes the molde at once
   if(tool==='generate'){const w=toWorld(e);pick={};clickGenerate(w);if(pick.region)ACT.genApply();return}
   if(tool!=='select'&&tool!=='pencil')return; const h=e.target.closest('[data-h]');
-  // as in molde.me, a double click on a point turns it into a control point (filled) or back
+  // a double click on a point turns it into a control point (filled) or back
   if(h){const sh=byId(h.dataset.hid),i=+h.dataset.h;if(!sh.locked){let on;mutate(()=>{const p=sh.pts[i];on=!isCtl(p);p.c=on});toast(on?'Ponto de controle ligado':'Ponto de controle desligado')}return}
   if(tool!=='select')return;
   const s=e.target.closest('[data-id]'); if(!s) return; const sh=byId(s.dataset.id);
@@ -2969,8 +2969,8 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();ACT.del();return}
   if(e.key.startsWith('Arrow')&&sel.size){e.preventDefault();const st=e.shiftKey?1:.1,d={ArrowLeft:{x:-st,y:0},ArrowRight:{x:st,y:0},ArrowUp:{x:0,y:-st},ArrowDown:{x:0,y:st}}[e.key];
     const ids=new Set([...sel].filter(i=>!byId(i).locked));mutate(()=>translate(ids,d),false);return}
-  if(tool==='point'&&k==='d'&&!mod){clearLoosePoints();renderPanel();return}   // molde.me: D removes the loose points
-  // same keys as molde.me (its own list of tooltips)
+  if(tool==='point'&&k==='d'&&!mod){clearLoosePoints();renderPanel();return}   // D removes the loose points
+  // keyboard shortcuts (its own list of tooltips)
   const map={v:'select',r:'rect',o:'ellipse',l:'line',c:'curve',e:'extend',h:'pencil',p:'point','.':'point',t:'text',w:'digitize',x:'perim',m:'generate',n:'tape',
     '1':'seam','7':'hem','2':'unfold','3':'fold','4':'notch','8':'dart',y:'align','6':'parallel',b:'check',d:'table','5':'grade',a:'gradeAuto','9':'gradeCopy',s:'safety'};
   if(map[k]){setTool(map[k]);return}
@@ -3235,7 +3235,7 @@ function printPlan(){
   const m=prMargins(), ps=pageSize(b,m), W=ps.W, H=ps.H;
   const tw=W-m.l-m.r, th=H-m.t-m.b; if(tw<2||th<2) return {bad:true};
   if(Math.max(W,H)>500) return {bad:true,big:true};
-  // sheets of paper are counted from the project's corner (0,0), like molde.me, so a sheet always shows the same
+  // sheets of paper are counted from the project's corner (0,0), so a sheet always shows the same
   // part of the project; plotter and total pages start at the moldes
   const grid=PR.paper!=='plot'&&PR.paper!=='total', ax=grid?b.x-((b.x%tw)+tw)%tw:b.x, ay=grid?b.y-((b.y%th)+th)%th:b.y;
   const c0=Math.round(ax/tw), r0=Math.round(ay/th);
@@ -3281,7 +3281,7 @@ $('#prCustom').addEventListener('change',e=>{PR.custom=e.target.checked;savePR()
 document.querySelectorAll('input[name="prOr"]').forEach(r=>r.addEventListener('change',()=>{if(r.checked){PR.orient=r.value;savePR();updPrint()}}));
 $('#prHelp').addEventListener('click',()=>{const t=$('#prHelpText');t.hidden=!t.hidden});
 function hexRGB(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]}
-const LW=2.54/72, D3=[3*LW,3*LW], PURPLE=[95,80,140];   // 1 pt in cm; molde.me's dash and label colour
+const LW=2.54/72, D3=[3*LW,3*LW], PURPLE=[95,80,140];   // 1 pt in cm; dash and label colour
 function drawPDF(pdf,ox,oy){
   const X=x=>x+ox,Y=y=>y+oy,PT=cm=>cm/2.54*72;
   const poly=(P,closed)=>{if(!P||P.length<2)return;pdf.moveTo(X(P[0].x),Y(P[0].y));for(let i=1;i<P.length;i++)pdf.lineTo(X(P[i].x),Y(P[i].y));if(closed)pdf.lineTo(X(P[0].x),Y(P[0].y));pdf.stroke()};
@@ -3294,7 +3294,7 @@ function drawPDF(pdf,ox,oy){
         else if(PR.cons){pdf.setDrawColor(136,136,136);pdf.setLineWidth(LW*.7);pdf.setLineDashPattern([4*LW,3*LW],0);poly(sample(s),s.closed);pdf.setLineDashPattern([],0)}
         continue; }
       if(!s.closed) continue;
-      // like molde.me: 1 pt lines, the cutting line (allowance) solid and the stitching line (the molde) dashed 3 pt
+      // 1 pt lines, the cutting line (allowance) solid and the stitching line (the molde) dashed 3 pt
             if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(LW); const P=gradedPts(s,z),SP=null;
         if(SP){poly(SP,true);pdf.setLineDashPattern(D3,0)} poly(sample({...s,pts:P}),true); pdf.setLineDashPattern([],0);
       }
@@ -3342,7 +3342,7 @@ function buildPDF(J,p,tiles){
     pdf.saveGraphicsState(); pdf.rect(p.m.l,p.m.t,p.tw,p.th,null); pdf.clip(); pdf.discardPath();
     SAMPLE_K=4; try{drawPDF(pdf,p.m.l-t.tx,p.m.t-t.ty)}finally{SAMPLE_K=1}
     pdf.restoreGraphicsState();
-    // like molde.me: sheet edge dashed 5 pt (½ pt line) and the number linha-coluna at the top left
+    // sheet edge dashed 5 pt (½ pt line) and the number linha-coluna at the top left
     if(PR.tracejadas){pdf.setDrawColor(0,0,0);pdf.setLineWidth(LW/2);pdf.setLineDashPattern([5*LW,5*LW],0);pdf.rect(p.m.l,p.m.t,p.tw,p.th,'S');pdf.setLineDashPattern([],0)}
     pdf.setFont('courier','normal');pdf.setFontSize(12);pdf.setTextColor(...PURPLE);pdf.text(t.lbl,p.m.l+.2,p.m.t+.581);
   });
