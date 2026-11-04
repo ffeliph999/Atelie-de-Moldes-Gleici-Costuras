@@ -665,7 +665,7 @@ let rotMode=false, rotPiv=null, rotGrp=null; // top-bar "Rotacionar": corner arc
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
 const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genGrainA:0,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
-  showHandles:false,symHandles:true,keepCurve:false,seamA:1,seamB:'',seamCf:'reto',seamCurve:false,safeD:.3,nText:'',nW:'',nMeas:'p',nTs:.6,nTdir:'horizontal',nP:'',nRedis:false,nRedisMode:'qtd',nRedisN:3,nRedisD:2.5,perimEnd:'b',cDentro:false,cCentro:false,ptLk:{},ptL:'',ptA:'',ptP:'',ptC:'',hideGrades:false,glblMode:'fora',seamArea:false,hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
+  showHandles:false,symHandles:true,keepCurve:false,seamA:1,seamB:'',seamCf:'reto',seamCurve:false,safeD:.3,nText:'',nW:'',nMeas:'p',nTs:.6,nTdir:'horizontal',nP:'',nRedis:false,nRedisMode:'qtd',nRedisN:3,nRedisD:2.5,perimEnd:'b',cDentro:false,cCentro:false,ptLk:{},ptL:'',ptA:'',ptP:'',ptC:'',hideGrades:false,glblMode:'fora',glblBase:false,seamArea:false,hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
   alignDir:'h',par:1,menor:true,tbBase:false,tbPin:false,tapeBase:false,tapePin:false,gcX:true,gcY:true};
 try{Object.assign(opt,JSON.parse(localStorage.getItem(OPTKEY)||'{}'))}catch(e){}
 function saveOpt(){try{localStorage.setItem(OPTKEY,JSON.stringify(opt))}catch(e){}}
@@ -1610,7 +1610,7 @@ function gradePanel(){
       <td>${s.base?'0':`<input type="number" step="0.1" data-gp="${s.id}" data-ax="x" value="${pt?(g.x??''):''}" ${pt?'':'disabled'} placeholder="0">`}</td>
       <td>${s.base?'0':`<input type="number" step="0.1" data-gp="${s.id}" data-ax="y" value="${pt?(g.y??''):''}" ${pt?'':'disabled'} placeholder="0">`}</td>
       <td><button class="mini" data-act="gradeEdit" data-i="${i}" title="Editar" aria-label="Editar tamanho">✎</button></td></tr>`}).join('');
-  return `<section class="sec"><h3>Gradação</h3>${rowI('Nomes dos tamanhos:',oSel('glblMode',[['fora','Fora do molde'],['linhas','Entre as linhas'],['ambos','Os dois']]))}<table class="gtab"><tr><th></th><th>Tamanho</th><th>X</th><th>Y</th><th></th></tr>${rows}</table>
+  return `<section class="sec"><h3>Gradação</h3>${rowI('Nomes dos tamanhos:',oSel('glblMode',[['fora','Fora do molde'],['linhas','Entre as linhas'],['ambos','Os dois']]))}${oChk('glblBase','Incluir o nome do tamanho base (colorido)')}<table class="gtab"><tr><th></th><th>Tamanho</th><th>X</th><th>Y</th><th></th></tr>${rows}</table>
     <button class="addround" data-act="gradeAdd" title="Adicionar tamanho" aria-label="Adicionar tamanho">+</button>
     ${pt||gp&&hasGrade(gp)?`<div class="acts">${pt?btn('gradeZero','Zerar ponto'):''}${gp&&hasGrade(gp)?btn('gradeClearPiece','Remover gradação do painel','danger'):''}</div>`:''}
     ${hint(pt?`Ponto ${gradePoint.i+1} de <b>${esc(gp.name||'molde')}</b>. Informe o deslocamento (cm) desse ponto em cada tamanho.`:'Clique num ponto do molde para definir quanto ele anda (X e Y, em cm) em cada tamanho.')}</section>`;
@@ -3023,12 +3023,12 @@ document.querySelectorAll('.drawer [data-act]').forEach(b=>b.addEventListener('c
 /* ---------- export / print / photo ---------- */
 const XSTYLE='.x-piece{fill:none;stroke:#111}.x-cons{fill:none;stroke:#888}.x-seam,.x-hemline{fill:none;stroke:#c0392b}.x-grain{fill:none;stroke:#111}.x-notch{stroke:#111;fill:none;color:#111}.x-lbl,.x-txt{fill:#111;font-family:Arial,Helvetica,sans-serif}.x-ptm{stroke:#111;fill:none}.x-ptc{fill:#111}.x-ghost{fill:none}.x-glbl{font-family:Arial,Helvetica,sans-serif}';
 function gradeLblList(sh,fs){
-  const mode=opt.glblMode||'fora',zs=doc.sizes.filter(z=>!z.base),out=[];
-  if(mode!=='linhas'){const GL=gradeLblBox(sh);zs.forEach((z,i)=>out.push({z,x:GL.x+GL.w+.3,y:GL.y+GL.h-(zs.length-1-i)*fs*1.25,mid:false}))}
+  const mode=opt.glblMode||'fora',zs=doc.sizes.filter(z=>!z.base),ls=opt.glblBase?doc.sizes.slice():zs,out=[];
+  if(mode!=='linhas'){const GL=gradeLblBox(sh);ls.forEach((z,i)=>out.push({z,x:GL.x+GL.w+.3,y:GL.y+GL.h-(ls.length-1-i)*fs*1.25,mid:false}))}
   if(mode!=='fora'){ // between the size lines: each name sits just above its own lower line, spread along the piece width; the font shrinks to fit the gap to the line above it
     const bb=boxOf(sample(sh)),bot=g=>g.y+g.h,L=zs.map(z=>({z,b:bot(gradedBox(sh,z))})).concat([{base:1,b:bb.y+bb.h}]).sort((a,c)=>a.b-c.b);
-    const n=zs.length;let k=0;
-    L.forEach((l,i)=>{if(l.base)return;const gap=i?l.b-L[i-1].b:Infinity,f=Math.max(.28,Math.min(fs,gap-.12)),w=String(l.z.name).length*f*.62;
+    const n=ls.length;let k=0;
+    L.forEach((l,i)=>{if(l.base){if(!opt.glblBase)return;l.z=baseSize()}const gap=i?l.b-L[i-1].b:Infinity,f=Math.max(.28,Math.min(fs,gap-.12)),w=String(l.z.name).length*f*.62;
       const x=Math.min(bb.x+bb.w*.1+bb.w*.8*(k/Math.max(1,n)),bb.x+bb.w-w-.2);k++;out.push({z:l.z,x:Math.max(bb.x+.2,x),y:l.b-.1,fs:f,mid:false})})}
   return out}
 function gradeLblBox(sh){const bs=[boxOf(seamPoly(sh)||sample(sh))];for(const z of doc.sizes)if(!z.base)bs.push(gradedBox(sh,z));return unionBox(bs)}
