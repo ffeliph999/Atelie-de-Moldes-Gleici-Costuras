@@ -665,7 +665,7 @@ let rotMode=false, rotPiv=null, rotGrp=null; // top-bar "Rotacionar": corner arc
 let mobile=false, uiPref='auto'; try{uiPref=localStorage.getItem('atelie-ui')||'auto'}catch(e){}
 const T=()=>mobile?1.8:1; // touch tolerance factor
 const opt={textSize:1.4,perimLen:0,perimMode:'bi',genName:'',genText:1.4,genGrain:90,genGrainA:0,genRot:'livre',genRef:false,genSel:true,genDel:false,genQtd:1,genPar:false,genFold:false,
-  showHandles:false,symHandles:true,keepCurve:false,seamA:1,seamB:'',seamCf:'reto',seamCurve:false,safeD:.3,nText:'',nW:'',nMeas:'p',nTs:.6,nTdir:'horizontal',nP:'',nRedis:false,nRedisMode:'qtd',nRedisN:3,nRedisD:2.5,perimEnd:'b',cDentro:false,cCentro:false,ptLk:{},ptL:'',ptA:'',ptP:'',ptC:'',hideGrades:false,seamArea:false,hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
+  showHandles:false,symHandles:true,keepCurve:false,seamA:1,seamB:'',seamCf:'reto',seamCurve:false,safeD:.3,nText:'',nW:'',nMeas:'p',nTs:.6,nTdir:'horizontal',nP:'',nRedis:false,nRedisMode:'qtd',nRedisN:3,nRedisD:2.5,perimEnd:'b',cDentro:false,cCentro:false,ptLk:{},ptL:'',ptA:'',ptP:'',ptC:'',hideGrades:false,glblMode:'fora',seamArea:false,hemW:1,hemN:1,hemPq:false,nIcon:'traco',nH:6,mIcon:'cruz',mSize:10,dartW:4,dartD:10,dartOpen:true,
   alignDir:'h',par:1,menor:true,tbBase:false,tbPin:false,tapeBase:false,tapePin:false,gcX:true,gcY:true};
 try{Object.assign(opt,JSON.parse(localStorage.getItem(OPTKEY)||'{}'))}catch(e){}
 function saveOpt(){try{localStorage.setItem(OPTKEY,JSON.stringify(opt))}catch(e){}}
@@ -1150,7 +1150,8 @@ function shapesSVG(px,exp){
       // seam allowance of each size: always in exports, on screen with "Mostrar área da margem de costura"
       // like molde.me, the allowance of every size is drawn in that size's color
       if(false){const SP=seamPoly(sh,P);if(SP)h+=`<path class="${C('seam')}" d="${polyD(SP)}" style="stroke:${col}" stroke-width="${px}" stroke-dasharray="${6*px} ${4*px}"/>`}
-      const b=boxOf(sample({...sh,pts:P})); if(!(exp&&XO&&!XO.textos)) h+=`<text class="${C('glbl')}" x="${b.x+b.w+.3}" y="${b.y+b.h}" font-size="${exp?.7:Math.max(.6,11*px)}" fill="${col}">${esc(sz.name)}</text>`; } }
+    }
+    if(!(exp&&XO&&!XO.textos)){const gfs=exp?.7:Math.max(.6,11*px);for(const l of gradeLblList(sh,gfs))h+=`<text class="${C('glbl')}" x="${l.x}" y="${l.y}" font-size="${l.fs||gfs}" fill="${l.z.color}">${esc(l.z.name)}</text>`} }
   // "Mostrar área da margem de costura": dotted blue line around the space the largest size will take
   if(!exp&&opt.seamArea) for(const sh of doc.shapes){ if(sh.type!=='path'||!sh.piece||!sh.closed||isHid(sh)) continue; let best=null;
     for(const sz of doc.sizes){const P=sz.base||!hasGrade(sh)?sh.pts:gradedPts(sh,sz),A=safetyPoly(sh,P)||cutPoly(sh,P);if(A){const ar=Math.abs(signedArea(A));if(!best||ar>best.ar)best={A,ar}}}
@@ -1207,6 +1208,12 @@ function grainGeom(sh,off=0){
 // (a single 1,4 cm name: grain 1,3 cm to one side of the centre, baseline 0,4 cm)
 function labelLayout(sh,lines){
   const fs=+sh.labelSize||1.4,G=grainGeom(sh,lines.length?.932*fs:0);
+  {const len=Math.max(Math.hypot(G.x2-G.x1,G.y2-G.y1),fs*3),out=[];   // the sizes line is wrapped so no line is longer than the grain line (keeps the text inside the piece)
+    for(const L of lines){const w=t=>String(t).length*fs*L.k*.6;
+      if(L.wrap&&w(L.t)>len){let cur='';for(const part of String(L.t).split(' · ')){const nx=cur?cur+' · '+part:part;if(cur&&w(nx)>len){out.push({...L,t:cur});cur=part}else cur=nx}out.push({...L,t:cur})}
+      else if(w(L.t)>len*1.15&&!L.b)out.push({...L,k:L.k*Math.max(.5,len*1.15/w(L.t))});
+      else out.push(L)}
+    lines=out}
   let tx=G.ux,ty=G.uy; if(tx<-1e-6||(Math.abs(tx)<=1e-6&&ty<0)){tx=-tx;ty=-ty}   // never upside down
   const vx=ty,vy=-tx,A=vx*-G.uy+vy*G.ux<=0,ang=Math.round(Math.atan2(ty,tx)*180/Math.PI*1000)/1000; // A: letter tops face away from the grain
   const items=[];let pos=A?-.536*fs:.536*fs;   // the box edge next to the grain, along the letters' "up"
@@ -1240,7 +1247,7 @@ function pieceLines(sh,o={}){
   if(o.textos===false) return L;
   if(sh.showQtd!==false&&sh.cutText) L.push({t:sh.cutText,k:.72});
   else if(sh.showQtd!==false) L.push({t:(sh.par?`${q} par${q>1?'es':''}${sh.par==='v'?' (vertical)':''}`:`Cortar ${q}x`)+(sh.fold?' na dobra':'')+(sh.tubular?' (tubular)':''),k:.72});
-  if(hasGrade(sh)) L.push({t:o.base?baseSize().name:doc.sizes.map(s=>s.name).join(' · '),k:.6});
+  if(hasGrade(sh)&&sh.showSizes!==false) L.push({t:o.base?baseSize().name:doc.sizes.map(s=>s.name).join(' · '),k:.6,wrap:1});
   if(sh.showTecido??(sh.tecido&&sh.tecido!=='Tecido 1')) L.push({t:sh.tecido||'Tecido 1',k:.6});
   if(sh.rot&&sh.rot!=='livre') L.push({t:'Rotação: '+sh.rot,k:.6});
   return L;
@@ -1603,7 +1610,7 @@ function gradePanel(){
       <td>${s.base?'0':`<input type="number" step="0.1" data-gp="${s.id}" data-ax="x" value="${pt?(g.x??''):''}" ${pt?'':'disabled'} placeholder="0">`}</td>
       <td>${s.base?'0':`<input type="number" step="0.1" data-gp="${s.id}" data-ax="y" value="${pt?(g.y??''):''}" ${pt?'':'disabled'} placeholder="0">`}</td>
       <td><button class="mini" data-act="gradeEdit" data-i="${i}" title="Editar" aria-label="Editar tamanho">✎</button></td></tr>`}).join('');
-  return `<section class="sec"><h3>Gradação</h3><table class="gtab"><tr><th></th><th>Tamanho</th><th>X</th><th>Y</th><th></th></tr>${rows}</table>
+  return `<section class="sec"><h3>Gradação</h3>${rowI('Nomes dos tamanhos:',oSel('glblMode',[['fora','Fora do molde'],['linhas','Entre as linhas'],['ambos','Os dois']]))}<table class="gtab"><tr><th></th><th>Tamanho</th><th>X</th><th>Y</th><th></th></tr>${rows}</table>
     <button class="addround" data-act="gradeAdd" title="Adicionar tamanho" aria-label="Adicionar tamanho">+</button>
     ${pt||gp&&hasGrade(gp)?`<div class="acts">${pt?btn('gradeZero','Zerar ponto'):''}${gp&&hasGrade(gp)?btn('gradeClearPiece','Remover gradação do painel','danger'):''}</div>`:''}
     ${hint(pt?`Ponto ${gradePoint.i+1} de <b>${esc(gp.name||'molde')}</b>. Informe o deslocamento (cm) desse ponto em cada tamanho.`:'Clique num ponto do molde para definir quanto ele anda (X e Y, em cm) em cada tamanho.')}</section>`;
@@ -1612,9 +1619,11 @@ function autoGradePanel(){
   const sh=pick.autoPiece&&byId(pick.autoPiece);
   const rows=doc.sizes.map(s=>{const g=doc.autoGrade[s.id]||{};return `<tr><td><span class="gname"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}${s.base?' <span class="base-pill">BASE</span>':''}</span></td>
     <td>${s.base?'0':`<input type="number" step="0.1" data-ag="${s.id}" data-ax="x" value="${g.x??''}" placeholder="0">`}</td><td>${s.base?'0':`<input type="number" step="0.1" data-ag="${s.id}" data-ax="y" value="${g.y??''}" placeholder="0">`}</td></tr>`}).join('');
-  return sec('Gradação automática',`<table class="gtab"><tr><th>Tamanho</th><th>Largura</th><th>Altura</th></tr>${rows}</table>`+
+  const anc=doc.autoAnc||{},ancSel=(k,o)=>`<select data-anc="${k}">${o.map(([v,l])=>`<option value="${v}"${(anc[k]||'c')===v?' selected':''}>${l}</option>`).join('')}</select>`;
+  const ancRows=rowI('Fixo na horizontal:',ancSel('h',[['c','Centro'],['l','Esquerda'],['r','Direita']]))+rowI('Fixo na vertical:',ancSel('v',[['c','Centro'],['t','Topo'],['b','Base']]));
+  return sec('Gradação automática',`<table class="gtab"><tr><th>Tamanho</th><th>Largura</th><th>Altura</th></tr>${rows}</table>`+ancRows+
     btn('autoApply','Aplicar na peça','block primary',!sh)+
-    hint(sh?`Peça: <b>${esc(sh.name||'molde')}</b>. Os valores são quanto a peça inteira cresce (cm) em cada tamanho. Os pontos são deslocados proporcionalmente, a partir do topo${sh.fold?' e da dobra':' e da esquerda'}.`:'Clique numa peça e informe quanto ela cresce em largura e altura em cada tamanho. Para criar tamanhos, use a ferramenta Gradação.'));
+    hint(sh?`Peça: <b>${esc(sh.name||'molde')}</b>. Os valores são quanto a peça inteira cresce (cm) em cada tamanho. Os pontos são deslocados proporcionalmente, a partir do <b>ponto fixo</b> escolhido (o lado oposto é o que cresce)${sh.fold?'. Nesta peça a dobra fica sempre fixa na horizontal':''}.`:'Clique numa peça e informe quanto ela cresce em largura e altura em cada tamanho. Para criar tamanhos, use a ferramenta Gradação.'));
 }
 function digitPanel(){
   const im=pick.digit&&byId(pick.digit);
@@ -1677,7 +1686,7 @@ function panelPath(s){
      ${rowI('Tam. do texto:',`<select id="p-ls" data-k="labelSize">${sizeOpts.map(([v,l])=>`<option value="${v}"${+s.labelSize===v?' selected':''}>${l}</option>`).join('')}</select>`)}
      ${grainFields(s)}
      ${rowI('Rotação permitida:',`<select id="p-rot" data-k="rot">${[['livre','Livre'],['180°','180°'],['90°','90°'],['nenhuma','Nenhuma']].map(([v,l])=>`<option value="${v}"${s.rot===v?' selected':''}>${l}</option>`).join('')}</select>`)}
-     ${rowI('Par:',`<select id="p-par" data-k="par">${[['','Nenhum'],['h','Horizontal'],['v','Vertical']].map(([v,l])=>`<option value="${v}"${(s.par===true?'h':s.par||'')===v?' selected':''}>${l}</option>`).join('')}</select>`)}${ck('mirror','Permitir espelhar',true)}${ck('fold','Cortar na dobra',false)}${ck('tubular','Dobra no tecido tubular',false)}${ck('showRef','Exibir referência',true)}${ck('showTecido','Exibir tecido',false)}${ck('showQtd','Exibir quantidade',true)}
+     ${rowI('Par:',`<select id="p-par" data-k="par">${[['','Nenhum'],['h','Horizontal'],['v','Vertical']].map(([v,l])=>`<option value="${v}"${(s.par===true?'h':s.par||'')===v?' selected':''}>${l}</option>`).join('')}</select>`)}${ck('mirror','Permitir espelhar',true)}${ck('fold','Cortar na dobra',false)}${ck('tubular','Dobra no tecido tubular',false)}${ck('showRef','Exibir referência',true)}${ck('showTecido','Exibir tecido',false)}${ck('showQtd','Exibir quantidade',true)}${ck('showSizes','Exibir tamanhos',true)}
      ${rowI('Tecido:',`<select id="p-tecido" data-k="tecido">${['Tecido 1','Tecido 2','Tecido 3','Forro','Entretela'].map(t=>`<option${(s.tecido||'Tecido 1')===t?' selected':''}>${t}</option>`).join('')}</select>`)}
      ${rowI('Margem geral:',`<input type="number" id="p-seam" data-k="seam" value="${s.seam||0}" min="0" step="0.1">`,'cm')}`)+
    sec('Encolhimento',`<p class="hint">Aumenta o molde na impressão e na exportação para compensar o encolhimento do tecido.</p>`+
@@ -1722,6 +1731,7 @@ function bindPanel(root){
     if(ev==='input')el.addEventListener('change',flushPending);});
   root.querySelectorAll('[data-pt]').forEach(el=>{el.addEventListener('input',()=>{const sh=byId(selPoint.id),p=sh.pts[selPoint.i],v=parseFloat(el.value);if(!isFinite(v))return;if(!pending)pending=snap0();p[el.dataset.pt]=v;render();updateStats();scheduleSave()});el.addEventListener('change',flushPending)});
   root.querySelectorAll('[data-gp]').forEach(el=>{el.addEventListener('input',()=>{const sh=byId(gradePoint.id),p=sh.pts[gradePoint.i];if(!pending)pending=snap0();p.g=p.g||{};const g=p.g[el.dataset.gp]=p.g[el.dataset.gp]||{x:0,y:0};g[el.dataset.ax]=parseFloat(el.value)||0;render();scheduleSave()});el.addEventListener('change',flushPending)});
+  root.querySelectorAll('[data-anc]').forEach(el=>el.addEventListener('change',()=>{doc.autoAnc=doc.autoAnc||{};doc.autoAnc[el.dataset.anc]=el.value;scheduleSave()}));
   root.querySelectorAll('[data-ag]').forEach(el=>el.addEventListener('input',()=>{const g=doc.autoGrade[el.dataset.ag]=doc.autoGrade[el.dataset.ag]||{x:0,y:0};g[el.dataset.ax]=parseFloat(el.value)||0;scheduleSave()}));
   root.querySelectorAll('[data-med]').forEach(el=>el.addEventListener('input',()=>{const m=doc.medidas[+el.dataset.med];const k=el.dataset.mk;if(k==='nome')m.nome=el.value;else m.vals[k]=el.value===''?'':parseFloat(el.value);scheduleSave();renderFloat()}));
   const gn=root.querySelector('#g-name'); if(gn){gn.addEventListener('input',()=>newGrade.name=gn.value);setTimeout(()=>gn.focus(),0)}
@@ -2477,7 +2487,7 @@ function rotFrame(){const ss=selShapes().filter(s=>!s.locked);if(!ss.length)retu
   return {key,ang,corners,c,piv,ss,local:p=>{const dx=p.x-c.x,dy=p.y-c.y;return{dx:dx*co+dy*si,dy:-dx*si+dy*co}}}}
 function scaleSel(sx,sy){const b=selBox();if(!b)return;mutate(()=>xform(new Set(sel),p=>({x:b.x+(p.x-b.x)*sx,y:b.y+(p.y-b.y)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})}))}
 function applyAutoGrade(sh,ag){
-  const b=boxOf(sh.pts),fe=sh.fold?foldEdge(sh):null,ax=fe?fe.X:b.x,ay=b.y;
+  const b=boxOf(sh.pts),fe=sh.fold?foldEdge(sh):null,an=doc.autoAnc||{},ax=fe?fe.X:an.h==='l'?b.x:an.h==='r'?b.x+b.w:b.x+b.w/2,ay=an.v==='t'?b.y:an.v==='b'?b.y+b.h:b.y+b.h/2;   // fixed point (zero point) of the grading; default = centre; a fold piece keeps its fold edge fixed
   sh.pts.forEach(p=>{p.g={};for(const k in ag){const v=ag[k];if(!v)continue;p.g[k]={x:r3(b.w?(+v.x||0)*(p.x-ax)/b.w*(fe&&fe.side==='max'?-1:1):0),y:r3(b.h?(+v.y||0)*(p.y-ay)/b.h:0)}}});
 }
 function walk(a,b,menor,dentro,centro){
@@ -2529,12 +2539,12 @@ function addImageShape(src,w0){
 function readImage(file,max=1800){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.86))};img.onerror=rej;img.src=fr.result};fr.onerror=rej;fr.readAsDataURL(file)})}
 
 const PROPSETS=[['labelSize','Tamanho do texto',['labelSize']],['grain','Sentido do fio',['grainA','grainCustom','grainHide','grainBoth']],['rot','Rotação permitida',['rot']],
-  ['tecido','Tecido',['tecido']],['qtd','Quantidade',['qtd']],['par','Par',['par']],['showQtd','Exibir quantidade',['showQtd']],['showRef','Exibir referência',['showRef']],['showTecido','Exibir tecido',['showTecido']],
+  ['tecido','Tecido',['tecido']],['qtd','Quantidade',['qtd']],['par','Par',['par']],['showQtd','Exibir quantidade',['showQtd']],['showSizes','Exibir tamanhos',['showSizes']],['showRef','Exibir referência',['showRef']],['showTecido','Exibir tecido',['showTecido']],
   ['mirror','Permitir espelhar',['mirror']],['tubular','Dobra no tecido tubular',['tubular']],['enc','Encolhimento',['encHOn','encH','encVOn','encV']],['seam','Margem geral',['seam']]];
 function propVal(s,k){const yn=v=>v?'Sim':'Não';switch(k){
   case 'labelSize':return fmt(+s.labelSize||1.4,1)+' cm';case 'grain':return (GRAIN_DIRS.find(([v])=>v===norm360(s.grainA??90))||[0,norm360(s.grainA??90)+'°'])[1];
   case 'rot':return s.rot||'livre';case 'tecido':return s.tecido||'Tecido 1';case 'qtd':return String(+s.qtd||1);case 'par':return s.par==='v'?'Vertical':s.par?'Horizontal':'Nenhum';case 'showTecido':return yn(s.showTecido);
-  case 'showQtd':return yn(s.showQtd!==false);case 'showRef':return yn(s.showRef!==false);case 'mirror':return yn(s.mirror!==false);case 'tubular':return yn(s.tubular);
+  case 'showQtd':return yn(s.showQtd!==false);case 'showSizes':return yn(s.showSizes!==false);case 'showRef':return yn(s.showRef!==false);case 'mirror':return yn(s.mirror!==false);case 'tubular':return yn(s.tubular);
   case 'enc':return (s.encHOn?fmt(+s.encH||0,1)+'%':'–')+' / '+(s.encVOn?fmt(+s.encV||0,1)+'%':'–');case 'seam':return fmt(+s.seam||0,1)+' cm'}return ''}
 // "Agrupar gradação": separate moldes of one model become sizes of the base molde (point k of each molde = point k of the base,
 // after finding the start point and direction that match best); the offsets are taken from the chosen reference
@@ -3012,6 +3022,16 @@ document.querySelectorAll('.drawer [data-act]').forEach(b=>b.addEventListener('c
 
 /* ---------- export / print / photo ---------- */
 const XSTYLE='.x-piece{fill:none;stroke:#111}.x-cons{fill:none;stroke:#888}.x-seam,.x-hemline{fill:none;stroke:#c0392b}.x-grain{fill:none;stroke:#111}.x-notch{stroke:#111;fill:none;color:#111}.x-lbl,.x-txt{fill:#111;font-family:Arial,Helvetica,sans-serif}.x-ptm{stroke:#111;fill:none}.x-ptc{fill:#111}.x-ghost{fill:none}.x-glbl{font-family:Arial,Helvetica,sans-serif}';
+function gradeLblList(sh,fs){
+  const mode=opt.glblMode||'fora',zs=doc.sizes.filter(z=>!z.base),out=[];
+  if(mode!=='linhas'){const GL=gradeLblBox(sh);zs.forEach((z,i)=>out.push({z,x:GL.x+GL.w+.3,y:GL.y+GL.h-(zs.length-1-i)*fs*1.25,mid:false}))}
+  if(mode!=='fora'){ // between the size lines: each name sits just above its own lower line, spread along the piece width; the font shrinks to fit the gap to the line above it
+    const bb=boxOf(sample(sh)),bot=g=>g.y+g.h,L=zs.map(z=>({z,b:bot(gradedBox(sh,z))})).concat([{base:1,b:bb.y+bb.h}]).sort((a,c)=>a.b-c.b);
+    const n=zs.length;let k=0;
+    L.forEach((l,i)=>{if(l.base)return;const gap=i?l.b-L[i-1].b:Infinity,f=Math.max(.28,Math.min(fs,gap-.12)),w=String(l.z.name).length*f*.62;
+      const x=Math.min(bb.x+bb.w*.1+bb.w*.8*(k/Math.max(1,n)),bb.x+bb.w-w-.2);k++;out.push({z:l.z,x:Math.max(bb.x+.2,x),y:l.b-.1,fs:f,mid:false})})}
+  return out}
+function gradeLblBox(sh){const bs=[boxOf(seamPoly(sh)||sample(sh))];for(const z of doc.sizes)if(!z.base)bs.push(gradedBox(sh,z));return unionBox(bs)}
 function gradedBox(s,z){const P=gradedPts(s,z);return boxOf(sample({...s,pts:P}))}
 function contentBox(){return unionBox(doc.shapes.filter(s=>s.type!=='image').map(s=>{if(s.type==='path'&&s.piece&&s.closed){const bs=[boxOf(seamPoly(s)||sample(s))];for(const z of doc.sizes)if(!z.base&&hasGrade(s))bs.push(gradedBox(s,z));return unionBox(bs)}return shapeBox(s)}))}
 function exportSVG(){const W=doc.meta.largura,H=doc.meta.altura;
@@ -3275,9 +3295,10 @@ function drawPDF(pdf,ox,oy){
         continue; }
       if(!s.closed) continue;
       // like molde.me: 1 pt lines, the cutting line (allowance) solid and the stitching line (the molde) dashed 3 pt
-      if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(LW); const P=gradedPts(s,z),SP=null;
+            if(!PR.base&&hasGrade(s)) for(const z of doc.sizes){ if(z.base) continue; const [r,g,bl]=hexRGB(z.color); pdf.setDrawColor(r,g,bl); pdf.setLineWidth(LW); const P=gradedPts(s,z),SP=null;
         if(SP){poly(SP,true);pdf.setLineDashPattern(D3,0)} poly(sample({...s,pts:P}),true); pdf.setLineDashPattern([],0);
-        if(PR.textos){const b=boxOf(sample({...s,pts:P}));pdf.setTextColor(r,g,bl);pdf.setFontSize(PT(.6));pdf.setFont('courier','normal');pdf.text(z.name,X(b.x+b.w+.25),Y(b.y+b.h))} }
+      }
+      if(PR.textos&&!PR.base&&hasGrade(s)){pdf.setFontSize(PT(.6));pdf.setFont('courier','normal');for(const l of gradeLblList(s,.6)){const [r,g,bl]=hexRGB(l.z.color);pdf.setTextColor(r,g,bl);pdf.setFontSize(PT(l.fs||.6));pdf.text(l.z.name,X(l.x),Y(l.y))}}
       ink();
       const S=PR.margem?seamPoly(s):null;
       if(PR.margem){if(S){pdf.setLineWidth(LW);poly(S,true)}
