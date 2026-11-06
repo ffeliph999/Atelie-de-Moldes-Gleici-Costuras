@@ -182,6 +182,13 @@ dl.stats dt{color:var(--muted)} dl.stats dd{margin:0;text-align:right;font-famil
 .gtab input{width:100%;min-width:0;border:0;border-bottom:1px solid var(--line);background:transparent;padding:3px 2px;font-family:var(--font-num);font-size:12px;outline:none}
 .gtab input:focus{border-color:var(--accent)}
 .gname{display:flex;align-items:center;gap:6px;font-weight:600}
+.gtab-g{table-layout:fixed;width:100%}
+.gtab.gtab-g td,.gtab.gtab-g th{padding:3px 2px;white-space:nowrap;overflow:hidden}
+.gtab-g .gname{min-width:0;gap:4px}.gtab-g .gname .nm{overflow:hidden;text-overflow:ellipsis;min-width:0}.gtab-g .gname .dot,.gtab-g .base-pill{flex:none}
+.gtab.gtab-g input{min-width:0;width:100%;-moz-appearance:textfield;appearance:textfield}
+.gtab-g input::-webkit-inner-spin-button,.gtab-g input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.gst-w{display:flex;align-items:center;gap:1px}.gst{display:grid;flex:none}.gst .mini{padding:0;width:14px;height:12px;font-size:8px}.gst .mini:disabled{opacity:.3}
+.gmv{display:grid}.gmv .mini{padding:0;height:15px;width:18px}
 .dot{width:11px;height:11px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.15)}
 .mini{border:0;background:transparent;color:var(--muted);padding:2px 4px;border-radius:4px;font-size:12px;line-height:1}
 .mini:hover{background:var(--chrome-2);color:var(--ink)}
@@ -1605,14 +1612,15 @@ function gradePanel(){
       <div class="acts">${btn('gradeBack','Cancelar','danger')}${btn('gradeSave','Salvar','primary')}${e&&!newGrade.base?btn('gradeDel','Excluir tamanho','danger'):''}</div></section>`;}
   const gp=gradePoint&&byId(gradePoint.id), pt=gp&&gp.pts[gradePoint.i];
   const rows=doc.sizes.map((s,i)=>{const g=pt&&pt.g&&pt.g[s.id]||{};
-    return `<tr><td style="white-space:nowrap"><button class="mini" data-act="gradeUp" data-i="${i}" title="Subir" aria-label="Subir">▲</button><button class="mini" data-act="gradeDown" data-i="${i}" title="Descer" aria-label="Descer">▼</button></td>
-      <td><span class="gname"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}${s.base?' <span class="base-pill">BASE</span>':''}</span></td>
-      <td>${s.base?'0':`<input type="number" step="0.1" data-gp="${s.id}" data-ax="x" value="${pt?(g.x??''):''}" ${pt?'':'disabled'} placeholder="0">`}</td>
-      <td>${s.base?'0':`<input type="number" step="0.1" data-gp="${s.id}" data-ax="y" value="${pt?(g.y??''):''}" ${pt?'':'disabled'} placeholder="0">`}</td>
+    return `<tr><td><div class="gmv"><button class="mini" data-act="gradeUp" data-i="${i}" title="Subir" aria-label="Subir">▲</button><button class="mini" data-act="gradeDown" data-i="${i}" title="Descer" aria-label="Descer">▼</button></div></td>
+      <td><span class="gname"><span class="dot" style="background:${s.color}"></span><span class="nm" title="${esc(s.name)}">${esc(s.name)}</span>${s.base?'<span class="base-pill" title="Tamanho base">B</span>':''}</span></td>
+      <td>${s.base?'0':`<div class="gst-w"><input type="number" step="0.1" data-gp="${s.id}" data-ax="x" value="${pt?(g.x??''):''}" ${pt?'':'disabled'} placeholder="0"><span class="gst"><button class="mini" data-act="gradeStep" data-d="0.1" ${pt?'':'disabled'} aria-label="Aumentar" title="Aumentar 0,1">▲</button><button class="mini" data-act="gradeStep" data-d="-0.1" ${pt?'':'disabled'} aria-label="Diminuir" title="Diminuir 0,1">▼</button></span></div>`}</td>
+      <td>${s.base?'0':`<div class="gst-w"><input type="number" step="0.1" data-gp="${s.id}" data-ax="y" value="${pt?(g.y??''):''}" ${pt?'':'disabled'} placeholder="0"><span class="gst"><button class="mini" data-act="gradeStep" data-d="0.1" ${pt?'':'disabled'} aria-label="Aumentar" title="Aumentar 0,1">▲</button><button class="mini" data-act="gradeStep" data-d="-0.1" ${pt?'':'disabled'} aria-label="Diminuir" title="Diminuir 0,1">▼</button></span></div>`}</td>
       <td><button class="mini" data-act="gradeEdit" data-i="${i}" title="Editar" aria-label="Editar tamanho">✎</button></td></tr>`}).join('');
-  return `<section class="sec"><h3>Gradação</h3>${rowI('Nomes dos tamanhos:',oSel('glblMode',[['fora','Fora do molde'],['linhas','Entre as linhas'],['ambos','Os dois']]))}${oChk('glblBase','Incluir o nome do tamanho base (colorido)')}<table class="gtab"><tr><th></th><th>Tamanho</th><th>X</th><th>Y</th><th></th></tr>${rows}</table>
+  return `<section class="sec"><h3>Gradação</h3>${rowI('Nomes dos tamanhos:',oSel('glblMode',[['fora','Fora do molde'],['linhas','Entre as linhas'],['ambos','Os dois']]))}${oChk('glblBase','Incluir o nome do tamanho base (colorido)')}<table class="gtab gtab-g"><colgroup><col style="width:20px"><col><col style="width:60px"><col style="width:60px"><col style="width:24px"></colgroup><tr><th></th><th>Tamanho</th><th>X</th><th>Y</th><th></th></tr>${rows}</table>
     <button class="addround" data-act="gradeAdd" title="Adicionar tamanho" aria-label="Adicionar tamanho">+</button>
     ${pt||gp&&hasGrade(gp)?`<div class="acts">${pt?btn('gradeZero','Zerar ponto'):''}${gp&&hasGrade(gp)?btn('gradeClearPiece','Remover gradação do painel','danger'):''}</div>`:''}
+    ${gp&&hasGrade(gp)?rowI('Tamanho:',`<select id="g-ext">${doc.sizes.filter(z=>!z.base).map(z=>`<option value="${z.id}">${esc(z.name)}</option>`).join('')}</select>`)+`<div class="acts">${btn('gradeExtract','Criar molde sem gradação')}</div>`:''}
     ${hint(pt?`Ponto ${gradePoint.i+1} de <b>${esc(gp.name||'molde')}</b>. Informe o deslocamento (cm) desse ponto em cada tamanho.`:'Clique num ponto do molde para definir quanto ele anda (X e Y, em cm) em cada tamanho.')}</section>`;
 }
 function autoGradePanel(){
@@ -2668,6 +2676,12 @@ const ACT={
       else if(s.type==='mark'&&s.icon!=='texto'&&opt.mIcon!=='texto'){s.icon=opt.mIcon;s.size=+opt.mSize||10;n++}}));
     toast(n?'Formatos reaplicados em todos os piques':'Nenhum pique para alterar')},
   gradeZero(){const gp=gradePoint&&byId(gradePoint.id);if(!gp)return;mutate(()=>{delete gp.pts[gradePoint.i].g});toast('Ponto zerado')},
+  // turns one graded size into its own ungraded piece (same seam/hem settings), placed to the right of the sizes
+  gradeExtract(){const gp=gradePoint&&byId(gradePoint.id),el=document.getElementById('g-ext'),z=el&&doc.sizes.find(s=>s.id===el.value);if(!gp||!z)return;
+    mutate(()=>{const c=clone(gp);c.id=uid();delete c.parent;c.name=(gp.name||'molde')+' · '+z.name;
+      c.pts=gradedPts(gp,z).map(q=>{const r=clone(q);delete r.g;return r});
+      const GL=gradeLblBox(gp),b=boxOf(sample(c));doc.shapes.push(c);translate(new Set([c.id]),{x:GL.x+GL.w+4-b.x,y:0});sel=new Set([c.id]);selPoint=null});
+    toast('Molde do tamanho '+z.name+' criado')},
   gradeClearPiece(){const gp=gradePoint&&byId(gradePoint.id);if(!gp)return;mutate(()=>gp.pts.forEach(p=>{delete p.g}));toast('Gradação removida do painel')},
   seamHemRemove(){const sh=byId(pick.seamPiece);if(!sh)return;mutate(()=>{sh.seam=0;sh.pts.forEach(p=>{delete p.e;delete p.e2;delete p.cf;delete p.hem})});toast('Costura e bainha removidas')},
   // the allowance joins the piece (the cut line becomes the outline), drawn dotted
@@ -2719,6 +2733,7 @@ const ACT={
     if(gradeView==='edit'){const s=doc.sizes.find(x=>x.id===newGrade.id);s.name=nm;s.color=newGrade.color}else addSizeGraded(nm,newGrade.color);
     gradeView='list';scheduleSave();renderPanel();render()},
   gradeDel(){const id=newGrade.id;doc.sizes=doc.sizes.filter(s=>s.id!==id);doc.shapes.forEach(s=>s.pts&&s.pts.forEach(p=>{if(p.g)delete p.g[id]}));gradeView='list';scheduleSave();renderPanel();render()},
+  gradeStep(b){const el=b.closest('td').querySelector('input');if(!el||el.disabled)return;const v=Math.round(((parseFloat(el.value)||0)+(+b.dataset.d||0))*100)/100;el.value=v;el.dispatchEvent(new Event('input'));el.dispatchEvent(new Event('change'))},
   gradeUp(b){const i=+b.dataset.i;if(i>0){[doc.sizes[i-1],doc.sizes[i]]=[doc.sizes[i],doc.sizes[i-1]];scheduleSave();renderPanel()}},
   gradeDown(b){const i=+b.dataset.i;if(i<doc.sizes.length-1){[doc.sizes[i+1],doc.sizes[i]]=[doc.sizes[i],doc.sizes[i+1]];scheduleSave();renderPanel()}},
   autoApply(){const sh=byId(pick.autoPiece);if(!sh)return;if(doc.sizes.length<2)return toast('Crie os tamanhos na ferramenta Gradação');mutate(()=>applyAutoGrade(sh,doc.autoGrade),false);toast('Gradação aplicada')}
