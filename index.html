@@ -1104,6 +1104,16 @@ function fit(){const r=svg.getBoundingClientRect();if(!r.width)return;const b=un
 function setZoomPct(p){const r=svg.getBoundingClientRect();zoomAt(PXCM*p/100,r.width/2,r.height/2)}
 
 /* ---------- snapping ---------- */
+// nearest vertex (first) or edge point of the graded-size outlines of every graded piece, within tol
+function gradeSnap(p,tol){
+  if(opt.hideGrades) return null; let best=null,bd=tol;
+  const each=fn=>{for(const sh of doc.shapes){if(sh.type!=='path'||!sh.closed||sh.hidden||!hasGrade(sh))continue;for(const z of doc.sizes){if(z.base)continue;fn(sh,gradedPts(sh,z))}}};
+  each((sh,P)=>{for(const q of P){const d=dist(q,p);if(d<bd){bd=d;best=q}}});
+  if(best) return {x:best.x,y:best.y};
+  bd=tol;
+  each((sh,P)=>{const L=sample({...sh,pts:P}),n=L.length;for(let j=0;j<n;j++){const a=L[j],b=L[(j+1)%n],dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy||1e-12,u=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/l2,0,1),q={x:a.x+dx*u,y:a.y+dy*u},d=dist(p,q);if(d<bd){bd=d;best=q}}});
+  return best?{x:r3(best.x),y:r3(best.y)}:null;
+}
 function snap(p,o={}){
   if(!snapOn) return {x:p.x,y:p.y};
   const tol=9*T()/view.scale; let best=null,bd=tol;
@@ -1111,6 +1121,7 @@ function snap(p,o={}){
     const c=s.type==='path'?s.pts:(s.type==='point'?[s]:[]); for(const q of c){if(q===o.skip)continue;const d=dist(q,p);if(d<bd){bd=d;best=q}} }
   if(o.temp&&temp) for(const q of temp.pts){const d=dist(q,p);if(d<bd){bd=d;best=q}}
   if(best) return {x:best.x,y:best.y,v:true};
+  if(tool==='tape'){const g=gradeSnap(p,tol);if(g)return{x:g.x,y:g.y,v:true}}   // the tape also snaps to the lines of the graded sizes, so the space between them can be measured
   if(o.temp){ const s=nearestSeg(p,9); if(s) return {x:r3(s.q.x),y:r3(s.q.y),v:true,on:{id:s.sh.id,i:s.i}}; }
   const g=view.scale>=20?.1:.5; return {x:r3(Math.round(p.x/g)*g),y:r3(Math.round(p.y/g)*g)};
 }
@@ -1628,7 +1639,7 @@ function autoGradePanel(){
   const rows=doc.sizes.map(s=>{const g=doc.autoGrade[s.id]||{};return `<tr><td><span class="gname"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}${s.base?' <span class="base-pill">BASE</span>':''}</span></td>
     <td>${s.base?'0':`<input type="number" step="0.1" data-ag="${s.id}" data-ax="x" value="${g.x??''}" placeholder="0">`}</td><td>${s.base?'0':`<input type="number" step="0.1" data-ag="${s.id}" data-ax="y" value="${g.y??''}" placeholder="0">`}</td></tr>`}).join('');
   const anc=doc.autoAnc||{},ancSel=(k,o)=>`<select data-anc="${k}">${o.map(([v,l])=>`<option value="${v}"${(anc[k]||'c')===v?' selected':''}>${l}</option>`).join('')}</select>`;
-  const ancRows=rowI('Fixo na horizontal:',ancSel('h',[['c','Centro'],['l','Esquerda'],['r','Direita']]))+rowI('Fixo na vertical:',ancSel('v',[['c','Centro'],['t','Topo'],['b','Base']]));
+  const ancRows=rowI('Fixo na horizontal:',ancSel('h',[['c','Centro'],['l','Esquerda'],['r','Direita']]))+rowI('Fixo na vertical:',ancSel('v',[['c','Centro'],['t','Topo'],['b','Base']]))+`<label class="chk"><input type="checkbox" data-asd${doc.autoSide?' checked':''}> Valores por lado (cada lado livre cresce o valor informado)</label>`;
   return sec('Gradação automática',`<table class="gtab"><tr><th>Tamanho</th><th>Largura</th><th>Altura</th></tr>${rows}</table>`+ancRows+
     btn('autoApply','Aplicar na peça','block primary',!sh)+
     hint(sh?`Peça: <b>${esc(sh.name||'molde')}</b>. Os valores são quanto a peça inteira cresce (cm) em cada tamanho. Os pontos são deslocados proporcionalmente, a partir do <b>ponto fixo</b> escolhido (o lado oposto é o que cresce)${sh.fold?'. Nesta peça a dobra fica sempre fixa na horizontal':''}.`:'Clique numa peça e informe quanto ela cresce em largura e altura em cada tamanho. Para criar tamanhos, use a ferramenta Gradação.'));
@@ -1739,6 +1750,7 @@ function bindPanel(root){
     if(ev==='input')el.addEventListener('change',flushPending);});
   root.querySelectorAll('[data-pt]').forEach(el=>{el.addEventListener('input',()=>{const sh=byId(selPoint.id),p=sh.pts[selPoint.i],v=parseFloat(el.value);if(!isFinite(v))return;if(!pending)pending=snap0();p[el.dataset.pt]=v;render();updateStats();scheduleSave()});el.addEventListener('change',flushPending)});
   root.querySelectorAll('[data-gp]').forEach(el=>{el.addEventListener('input',()=>{const sh=byId(gradePoint.id),p=sh.pts[gradePoint.i];if(!pending)pending=snap0();p.g=p.g||{};const g=p.g[el.dataset.gp]=p.g[el.dataset.gp]||{x:0,y:0};g[el.dataset.ax]=parseFloat(el.value)||0;render();scheduleSave()});el.addEventListener('change',flushPending)});
+  root.querySelectorAll('[data-asd]').forEach(el=>el.addEventListener('change',()=>{doc.autoSide=el.checked;scheduleSave()}));
   root.querySelectorAll('[data-anc]').forEach(el=>el.addEventListener('change',()=>{doc.autoAnc=doc.autoAnc||{};doc.autoAnc[el.dataset.anc]=el.value;scheduleSave()}));
   root.querySelectorAll('[data-ag]').forEach(el=>el.addEventListener('input',()=>{const g=doc.autoGrade[el.dataset.ag]=doc.autoGrade[el.dataset.ag]||{x:0,y:0};g[el.dataset.ax]=parseFloat(el.value)||0;scheduleSave()}));
   root.querySelectorAll('[data-med]').forEach(el=>el.addEventListener('input',()=>{const m=doc.medidas[+el.dataset.med];const k=el.dataset.mk;if(k==='nome')m.nome=el.value;else m.vals[k]=el.value===''?'':parseFloat(el.value);scheduleSave();renderFloat()}));
@@ -2496,7 +2508,9 @@ function rotFrame(){const ss=selShapes().filter(s=>!s.locked);if(!ss.length)retu
 function scaleSel(sx,sy){const b=selBox();if(!b)return;mutate(()=>xform(new Set(sel),p=>({x:b.x+(p.x-b.x)*sx,y:b.y+(p.y-b.y)*sy}),{scale:{sx,sy},vec:(x,y)=>({x:x*sx,y:y*sy})}))}
 function applyAutoGrade(sh,ag){
   const b=boxOf(sh.pts),fe=sh.fold?foldEdge(sh):null,an=doc.autoAnc||{},ax=fe?fe.X:an.h==='l'?b.x:an.h==='r'?b.x+b.w:b.x+b.w/2,ay=an.v==='t'?b.y:an.v==='b'?b.y+b.h:b.y+b.h/2;   // fixed point (zero point) of the grading; default = centre; a fold piece keeps its fold edge fixed
-  sh.pts.forEach(p=>{p.g={};for(const k in ag){const v=ag[k];if(!v)continue;p.g[k]={x:r3(b.w?(+v.x||0)*(p.x-ax)/b.w*(fe&&fe.side==='max'?-1:1):0),y:r3(b.h?(+v.y||0)*(p.y-ay)/b.h:0)}}});
+  // "per side" option: the value is what EACH free side grows (a centred axis grows on both sides, so it is doubled; a fixed edge/fold already has a single free side)
+  const mx=doc.autoSide&&!fe&&(!an.h||an.h==='c')?2:1,my=doc.autoSide&&(!an.v||an.v==='c')?2:1;
+  sh.pts.forEach(p=>{p.g={};for(const k in ag){const v=ag[k];if(!v)continue;p.g[k]={x:r3(b.w?(+v.x||0)*mx*(p.x-ax)/b.w*(fe&&fe.side==='max'?-1:1):0),y:r3(b.h?(+v.y||0)*my*(p.y-ay)/b.h:0)}}});
 }
 function walk(a,b,menor,dentro,centro){
   const A=byId(a.id),B=byId(b.id); if(!A||!B) return;
